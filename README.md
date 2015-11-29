@@ -1,4 +1,4 @@
-# dyngandi
+# GDD | Gandi Dynamic DNS
 A cross-platform tool to update Gandi.net zonefiles written in Rust
 
 ## Inspiration
