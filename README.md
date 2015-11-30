@@ -1,4 +1,4 @@
-# GDD | Gandi Dynamic DNS
+# GDU | Gandi DNS Updater
 A tiny cross-platform tool to update Gandi.net zonefiles written in Rust.
 
 No dependency and simple configuration: either by config file or by command line parameters.
