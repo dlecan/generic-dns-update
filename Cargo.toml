@@ -1,0 +1,4 @@
+[package]
+name = "gandi-dns-updater"
+version = "0.1.0"
+authors = ["Damien Lecan <dev@dlecan.com>"]
