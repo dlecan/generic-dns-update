@@ -1,4 +1,4 @@
-# GDU | Gandi DNS Updater
+# GDU | Gandi DNS Updater [![Build Status](https://travis-ci.org/dlecan/gandi-dns-updater.svg?branch=master)](https://travis-ci.org/dlecan/gandi-dns-updater)
 A tiny cross-platform tool to update Gandi.net zonefiles written in Rust.
 
 No dependency and simple configuration: either by config file or by command line parameters.
