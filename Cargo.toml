@@ -2,3 +2,8 @@
 name = "gandi-dns-updater"
 version = "0.1.0"
 authors = ["Damien Lecan <dev@dlecan.com>"]
+
+[dependencies]
+clap = "1"
+log = "*"
+env_logger = "*"
