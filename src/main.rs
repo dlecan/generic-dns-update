@@ -20,14 +20,14 @@ fn main() {
             -d --domain=[domain] 'The domain name whose active zonefile will be updated, e.g. \"domain.com\"'
             -n --dry-run 'Dry run, don't really update Gandi zone file'
             [verbose]... -v 'Verbose mode'")
-        .arg(Arg::with_name("cnames")
-            .help("A space-separated list of the name(s) of the A record(s) to update or create")
+        .arg(Arg::with_name("record_name")
+            .help("Name of the A record to update or create (without domain)")
             .index(1)
             .required(true)
-            .multiple(true))
+            .multiple(false))
         .get_matches();
 
-    // Init logging to DEBUG only if user required it
+    // Init logging to DEBUG only if user requires it
     if matches.is_present("verbose") {
         env::set_var("RUST_LOG", "DEBUG");
     }
@@ -39,11 +39,8 @@ fn main() {
     let domain = matches.value_of("domain").unwrap();
     debug!("Using domain: {}", domain);
 
-    if let Some(ref in_v) = matches.values_of("cname") {
-        for in_cname in in_v.iter() {
-            debug!("cname: {}", in_cname);
-        }
-    }
+    let record_name = matches.value_of("record_name").unwrap();
+    debug!("Using record name: {}", record_name);
 
     let dry_run = matches.is_present("dry-run");
     debug!("Dry run: {}", dry_run);
