@@ -8,7 +8,29 @@ extern crate env_logger;
 use clap::{Arg, App, SubCommand};
 use std::env;
 
-const GANDI_URL: &'static str = "https://rpc.gandi.net/";
+const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/";
+
+trait GandiAPI {
+    fn check(&self);
+    fn update(&self);
+    fn create(&self);
+}
+
+struct GandiAPIImpl;
+
+impl GandiAPI for GandiAPIImpl {
+    fn check(&self) {
+        unimplemented!();
+    }
+
+    fn update(&self) {
+        unimplemented!();
+    }
+
+    fn create(&self) {
+        unimplemented!();
+    }
+}
 
 fn main() {
     let matches = App::new("gdu")
