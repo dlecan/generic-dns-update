@@ -1,10 +1,27 @@
 language: rust
 rust:
-  - stable
-  - beta
-  - nightly
+- stable
+- beta
+- nightly
 matrix:
+  fast_finish: true
   allow_failures:
-    - rust: nightly
+  - rust: nightly
 sudo: required
 dist: trusty
+install:
+- gem install fpm
+before_deploy:
+- ./scripts/package.sh
+deploy:
+  provider: packagecloud
+  repository: gdu-nightlies
+  username: dlecan
+  token:
+    secure: wO+7LqpeRve6lXwqNyrxJ5CEuJZ8g2tk/kWJ5MUR/VP3bF3x+ZNFny+MGf2WmIvorKh+w8qzg8oS09eqOayIt2ARWrYPQknPRW+FPi3ZLRds24SBRqovgFpYChiKjy7ApBAUU6r5/BxYVx2Jfqnz/zmvZJqt0WOa0688w3SpHM272B7QllVpHaGS2RbKFGuxV3HY73b180GCA8ju83ei339k3nBJc0/+oRvYxdAoQc9ZNTRlaSOVh2JGY0f9P17ePestLF22vgWJslzWxhpy/f8kbh6qrCvHpjtdihniKsdou6uOA/4uTbO7Vh6EUm/0tvk2iSSK7ksMUpZ2Antq7XFt/1+/dT8dC7+vUlBeZkExl/aEuPOuR1Wv+EX4jLSeyI5HB/TEi/loyqPEZ/0KuX2OtfApwtyEP5qbm8ITRiRfAkp7QAA7w4AseQLa6pfb1OWzOWiBS7drdsXzFbHv0v5EapF/joDEPOX9MLKRu2Q5nmANeJXq9gFklEnU5dzpAxLRnsmYGWHFvQTPcGnEeqZ2+pHXW5AiKXtEGbcnzdQAVvjXbN/1T/0q/OAsLp20d7YDStXolg4+XBDJf+VjFdq10V8RTPJ0aWilbpck7AOIPge3EtK/edEhvbqPG6Q5SEVGvqq6Gm1g2M5IU70SPf8RufJPFvI95/QIFTPJYz0=
+  dist: ubuntu/trusty
+  skip_cleanup: true
+  local-dir: pkg
+  on:
+    all_branches: true
+    condition: "$TRAVIS_RUST_VERSION = stable"
