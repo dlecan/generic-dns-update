@@ -22,6 +22,7 @@ deploy:
     dist: ubuntu/trusty
     skip_cleanup: true
     local-dir: pkg
+    package_glob: "**/*amd64*.deb"
     on:
       branch: master
       condition: "$TRAVIS_RUST_VERSION = stable"
@@ -33,6 +34,7 @@ deploy:
     dist: ubuntu/trusty
     skip_cleanup: true
     local-dir: pkg
+    package_glob: "**/*amd64*.deb"
     on:
       tags: true
       condition: "$TRAVIS_RUST_VERSION = stable"
