@@ -7,8 +7,6 @@ source ./scripts/config.sh
 ## AMD64 binary
 
 OS="linux"
-ARCH="amd64"
-BUILD_BIN_FILE="$(pwd)/target/release/gdu"
 PKG_INSTALL_BIN_DIR="/usr/bin/"
 PKG_NAME="$APP"
 OUTPUT_DIR="$(pwd)/pkg/"
@@ -18,6 +16,10 @@ then
   mkdir -p $OUTPUT_DIR
 
   cargo build --release
+
+  ## 64 bits deb package
+  ARCH="amd64"
+  BUILD_BIN_FILE="$(pwd)/target/release/gdu"
 
   fpm \
     -s dir \
@@ -29,9 +31,22 @@ then
     --vendor $VENDOR \
     $BUILD_BIN_FILE=$PKG_INSTALL_BIN_DIR
 
+  ## 64 bits rpm package
+  ARCH="x86_64"
+  BUILD_BIN_FILE="$(pwd)/target/release/gdu"
+
+  fpm \
+    -s dir \
+    -t rpm \
+    -n $PKG_NAME \
+    -p $OUTPUT_DIR \
+    -v $VERSION \
+    -a $ARCH \
+    --vendor $VENDOR \
+    $BUILD_BIN_FILE=$PKG_INSTALL_BIN_DIR
+
   ## ARMv6 binary for Raspbian
 
-  OS="linux"
   ARCH="armhf"
   BUILD_BIN_FILE="$(pwd)/target/arm-unknown-linux-gnueabihf/release/gdu"
 
