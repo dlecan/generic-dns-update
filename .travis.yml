@@ -11,6 +11,9 @@ sudo: required
 dist: trusty
 services:
   - docker
+addons:
+  apt_packages:
+  - rpm
 install:
 - gem install fpm
 before_deploy:
@@ -89,7 +92,7 @@ deploy:
     local-dir: pkg
     package_glob: "**/*armhf*.deb"
     on:
-      branch: master
+      tags: true
       condition: "$TRAVIS_RUST_VERSION = stable"
   - provider: packagecloud
     repository: gandi-dns-updater
@@ -101,7 +104,7 @@ deploy:
     local-dir: pkg
     package_glob: "**/*armhf*.deb"
     on:
-      branch: master
+      tags: true
       condition: "$TRAVIS_RUST_VERSION = stable"
 
 ## Debian
@@ -116,7 +119,7 @@ deploy:
     local-dir: pkg
     package_glob: "**/*amd64*.deb"
     on:
-      branch: master
+      tags: true
       condition: "$TRAVIS_RUST_VERSION = stable"
   - provider: packagecloud
     repository: gandi-dns-updater
@@ -128,7 +131,7 @@ deploy:
     local-dir: pkg
     package_glob: "**/*amd64*.deb"
     on:
-      branch: master
+      tags: true
       condition: "$TRAVIS_RUST_VERSION = stable"
 
 ## Fedora
@@ -143,5 +146,5 @@ deploy:
     local-dir: pkg
     package_glob: "**/*x86_64*.rpm"
     on:
-      branch: master
+      tags: true
       condition: "$TRAVIS_RUST_VERSION = stable"
