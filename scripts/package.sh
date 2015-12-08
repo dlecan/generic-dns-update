@@ -11,6 +11,9 @@ PKG_INSTALL_BIN_DIR="/usr/bin/"
 PKG_NAME="$APP"
 OUTPUT_DIR="$(pwd)/pkg/"
 
+DEB_VERSION="$CARGO_VERSION.b$TRAVIS_BUILD_NUMBER-git$GIT_VERSION"
+RPM_VERSION="$CARGO_VERSION.b$TRAVIS_BUILD_NUMBER_git$GIT_VERSION"
+
 if [ ! -d "$OUTPUT_DIR" ]
 then
   mkdir -p $OUTPUT_DIR
@@ -26,7 +29,7 @@ then
     -t deb \
     -n $PKG_NAME \
     -p $OUTPUT_DIR \
-    -v $VERSION \
+    -v $DEB_VERSION \
     -a $ARCH \
     --vendor $VENDOR \
     $BUILD_BIN_FILE=$PKG_INSTALL_BIN_DIR
@@ -40,7 +43,7 @@ then
     -t rpm \
     -n $PKG_NAME \
     -p $OUTPUT_DIR \
-    -v $VERSION \
+    -v $RPM_VERSION \
     -a $ARCH \
     --vendor $VENDOR \
     $BUILD_BIN_FILE=$PKG_INSTALL_BIN_DIR
@@ -60,7 +63,7 @@ then
     -t deb \
     -n $PKG_NAME \
     -p $OUTPUT_DIR \
-    -v $VERSION \
+    -v $DEB_VERSION \
     -a $ARCH \
     --vendor $VENDOR \
     $BUILD_BIN_FILE=$PKG_INSTALL_BIN_DIR
