@@ -7,27 +7,29 @@ extern crate env_logger;
 
 use clap::{Arg, App, SubCommand};
 use std::env;
+use std::io;
+use std::io::prelude::*;
 
 const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/";
 
 trait GandiAPI {
-    fn check(&self);
-    fn update(&self);
-    fn create(&self);
+    fn check(&self, record: &str) -> Option<&str>;
+    fn update(&self, record: &str, ipAddr: &str);
+    fn create(&self, record: &str, ipAddr: &str);
 }
 
 struct GandiAPIImpl;
 
 impl GandiAPI for GandiAPIImpl {
-    fn check(&self) {
+    fn check(&self, record: &str) -> Option<&str> {
         unimplemented!();
     }
 
-    fn update(&self) {
+    fn update(&self, record: &str, ipAddr: &str) {
         unimplemented!();
     }
 
-    fn create(&self) {
+    fn create(&self, record: &str, ipAddr: &str) {
         unimplemented!();
     }
 }
@@ -66,5 +68,25 @@ fn main() {
 
     let dry_run = matches.is_present("dry-run");
     debug!("Dry run: {}", dry_run);
+
+//    let stdin = io::stdin();
+//    for line in stdin.lock().lines() {
+//        println!("{}", line.unwrap());
+//    }
+
+    let detectedIpAddr = "todo my ip";
+
+    let gandi_api = GandiAPIImpl;
+
+    let maybeChecked = gandi_api.check(record_name);
+
+    match maybeChecked {
+        Some(ipAddr) => {
+            if (ipAddr != detectedIpAddr) {
+                gandi_api.update(record_name, ipAddr);
+            }
+        }
+        None => gandi_api.create(record_name, detectedIpAddr)
+    }
 
 }
