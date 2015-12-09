@@ -13,23 +13,23 @@ use std::io::prelude::*;
 const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/";
 
 trait GandiAPI {
-    fn check(&self, record: &str) -> Option<&str>;
-    fn update(&self, record: &str, ipAddr: &str);
-    fn create(&self, record: &str, ipAddr: &str);
+    fn isRecordAlreadyDeclared(&self, record: &str) -> Option<&str>;
+    fn updateRecord(&self, record: &str, ipAddr: &str);
+    fn createRecord(&self, record: &str, ipAddr: &str);
 }
 
 struct GandiAPIImpl;
 
 impl GandiAPI for GandiAPIImpl {
-    fn check(&self, record: &str) -> Option<&str> {
+    fn isRecordAlreadyDeclared(&self, record: &str) -> Option<&str> {
         unimplemented!();
     }
 
-    fn update(&self, record: &str, ipAddr: &str) {
+    fn updateRecord(&self, record: &str, ipAddr: &str) {
         unimplemented!();
     }
 
-    fn create(&self, record: &str, ipAddr: &str) {
+    fn createRecord(&self, record: &str, ipAddr: &str) {
         unimplemented!();
     }
 }
@@ -38,7 +38,7 @@ fn main() {
     let matches = App::new("gdu")
         .version(&crate_version!()[..])
         .author("Damien Lecan <dev@dlecan.com>")
-        .about("Gandi DNS updater, useful to reflect your dynamic IP address to your Gandi DNS zone file")
+        .about("Gandi DNS updater, useful to reflect your dynamic IP address to your Gandi DNS zone file.\nIP address is read from stdin.")
         .args_from_usage(
             "-a --apikey=[apikey] 'Your API key provided by Gandi'
             -d --domain=[domain] 'The domain name whose active zonefile will be updated, e.g. \"domain.com\"'
@@ -69,24 +69,27 @@ fn main() {
     let dry_run = matches.is_present("dry-run");
     debug!("Dry run: {}", dry_run);
 
-//    let stdin = io::stdin();
-//    for line in stdin.lock().lines() {
-//        println!("{}", line.unwrap());
-//    }
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(n) => {
+            println!("Input: {}", input);
+        }
+        Err(error) => println!("error: {}", error),
+    }
 
-    let detectedIpAddr = "todo my ip";
+    let detectedIpAddr = input.trim();
 
     let gandi_api = GandiAPIImpl;
 
-    let maybeChecked = gandi_api.check(record_name);
+    let maybeChecked = gandi_api.isRecordAlreadyDeclared(record_name);
 
     match maybeChecked {
         Some(ipAddr) => {
-            if (ipAddr != detectedIpAddr) {
-                gandi_api.update(record_name, ipAddr);
+            if ipAddr != detectedIpAddr {
+                gandi_api.updateRecord(record_name, ipAddr);
             }
         }
-        None => gandi_api.create(record_name, detectedIpAddr)
+        None => gandi_api.createRecord(record_name, detectedIpAddr)
     }
 
 }
