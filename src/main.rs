@@ -18,9 +18,12 @@ trait GandiAPI {
     fn createRecord(&self, record: &str, ipAddr: &str);
 }
 
-struct GandiAPIImpl;
+struct GandiAPIImpl<'a> {
+  xmlrpc_server: &'a str,
+  apikey: &'a str
+}
 
-impl GandiAPI for GandiAPIImpl {
+impl<'a> GandiAPI for GandiAPIImpl<'a> {
     fn isRecordAlreadyDeclared(&self, record: &str) -> Option<&str> {
         unimplemented!();
     }
@@ -79,7 +82,10 @@ fn main() {
 
     let detectedIpAddr = input.trim();
 
-    let gandi_api = GandiAPIImpl;
+    let gandi_api = GandiAPIImpl {
+      xmlrpc_server: GANDI_URL_PROD,
+      apikey: apikey
+    };
 
     let maybeChecked = gandi_api.isRecordAlreadyDeclared(record_name);
 
