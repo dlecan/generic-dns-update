@@ -10,4 +10,4 @@ name="gdu"
 clap = "1"
 log = "*"
 env_logger = "*"
-rust-xmlrpc = { git = "https://github.com/joeyfeldberg/rust-xmlrpc.git"}
+rust-xmlrpc = { git = "https://github.com/dlecan/rust-xmlrpc.git"}
