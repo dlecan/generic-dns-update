@@ -29,7 +29,8 @@ trait GandiAPI {
 struct GandiAPIImpl<'a> {
   xmlrpc_server: &'a str,
   apikey: &'a str,
-  zone_id: Option<i32>,
+  zone_id: Option<u32>,
+  zone_id_version: u16,
 }
 
 impl<'a> GandiAPIImpl<'a> {
@@ -39,6 +40,7 @@ impl<'a> GandiAPIImpl<'a> {
             xmlrpc_server: gandi_url,
             apikey: gandi_apikey,
             zone_id: None,
+            zone_id_version: 0,
         }
     }
 }
@@ -62,18 +64,63 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
         let (_, body_end) = body_end.split_at(first_int_markup + "<int>".len());
         let first_end_int_markup = body_end.find("</int>").unwrap();
         let (zone_id, _) = body_end.split_at(first_end_int_markup);
-        self.zone_id = zone_id.parse::<i32>().ok();
+        self.zone_id = zone_id.parse::<u32>().ok();
 
         debug!("Zone id: {}", self.zone_id.unwrap());
     }
 
     fn is_record_already_declared(&self, record_name: &str) -> Option<String> {
 
+        let response = &self.get_record_list(record_name, &self.zone_id_version);
+
+        // Extract already configured IP address
+        // We are looking for something like that: <value><string>55.32.210.10</string></value>
+        let regex = Regex::new(r"<value><string>([0-9.]*)</string></value>").unwrap();
+
+        let caps = regex.captures(&*response.body);
+
+        caps
+            .map_or(None, |caps| caps.at(1))
+            .map(|val| val.to_string())
+    }
+
+    fn update_record(&self, record_name: &str, ip_addr: &str) {
+
+        // Create a new zone and get return id
+        let client = xmlrpc::Client::new(self.xmlrpc_server);
+        let mut request = xmlrpc::Request::new("domain.zone.version.new");
+        request = request.argument(&self.apikey.to_string());
+        request = request.argument(&self.zone_id.unwrap());
+
+        let response = client.remote_call(&request).unwrap();
+
+        // Extract new zone version
+        // We are looking for something like that: <int>5</int>
+        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
+
+        let caps = regex.captures(&*response.body).unwrap();
+
+        let new_zone_id:u16 = caps.at(1).unwrap().parse::<u16>().ok().unwrap();
+
+        debug!("New zone version: {}", new_zone_id);
+
+        unimplemented!();
+    }
+
+    fn create_record(&self, record_name: &str, ip_addr: &str) {
+        unimplemented!();
+    }
+}
+
+impl<'a> GandiAPIImpl<'a> {
+
+    fn get_record_list(&self, record_name: &str, zone_id_version: &u16) -> xmlrpc::Response {
+
         let client = xmlrpc::Client::new(self.xmlrpc_server);
         let mut request = xmlrpc::Request::new("domain.zone.record.list");
         request = request.argument(&self.apikey.to_string());
         request = request.argument(&self.zone_id.unwrap());
-        request = request.argument(&0);
+        request = request.argument(zone_id_version);
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
         struct Record {
@@ -90,25 +137,7 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
         // Horrible hack, because 'type' is a reserved keyword ...
         request.body = request.body.replace("type_", "type");
 
-        let response = client.remote_call(&request).unwrap();
-
-        // Extract already configured IP address
-        // We are looking for something like that: <value><string>55.32.210.10</string></value>
-        let regex = Regex::new(r"<value><string>([0-9.]*)</string></value>").unwrap();
-
-        let caps = regex.captures(&*response.body);
-
-        caps
-            .map_or(None, |caps| caps.at(1))
-            .map(|val| val.to_string())
-    }
-
-    fn update_record(&self, record_name: &str, ip_addr: &str) {
-        unimplemented!();
-    }
-
-    fn create_record(&self, record_name: &str, ip_addr: &str) {
-        unimplemented!();
+        client.remote_call(&request).unwrap()
     }
 }
 
