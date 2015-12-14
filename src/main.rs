@@ -22,7 +22,7 @@ const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
 trait GandiAPI {
     fn init(&mut self, domain: &str);
     fn is_record_already_declared(&self, record_name: &str) -> Option<String>;
-    fn update_record(&self, record_name: &str, ip_addr: &str);
+    fn update_record(&self, record_name: &str, ip_addr: &str) -> bool;
     fn create_record(&self, record_name: &str, ip_addr: &str);
 }
 
@@ -48,9 +48,8 @@ impl<'a> GandiAPIImpl<'a> {
 impl<'a> GandiAPI for GandiAPIImpl<'a> {
 
     fn init(&mut self, domain: &str) {
-        let client = xmlrpc::Client::new(self.xmlrpc_server);
-        let mut request = xmlrpc::Request::new("domain.info");
-        request = request.argument(&self.apikey.to_string());
+
+        let (client, mut request) = self.get_gandi_client("domain.info");
         request = request.argument(&domain.to_string());
         request = request.finalize();
 
@@ -84,27 +83,91 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
             .map(|val| val.to_string())
     }
 
-    fn update_record(&self, record_name: &str, ip_addr: &str) {
+    fn update_record(&self, record_name: &str, ip_addr: &str) -> bool {
 
-        // Create a new zone and get return id
-        let client = xmlrpc::Client::new(self.xmlrpc_server);
-        let mut request = xmlrpc::Request::new("domain.zone.version.new");
-        request = request.argument(&self.apikey.to_string());
+        // Create a new zone and get return version
+
+        let (client, mut request) = self.get_gandi_client("domain.zone.version.new");
         request = request.argument(&self.zone_id.unwrap());
+        request = request.finalize();
 
         let response = client.remote_call(&request).unwrap();
 
-        // Extract new zone version
-        // We are looking for something like that: <int>5</int>
         let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
 
         let caps = regex.captures(&*response.body).unwrap();
 
-        let new_zone_id:u16 = caps.at(1).unwrap().parse::<u16>().ok().unwrap();
+        let new_zone_version = caps.at(1).unwrap().parse::<u16>().ok().unwrap();
 
-        debug!("New zone version: {}", new_zone_id);
+        debug!("New zone version: {}", new_zone_version);
 
-        unimplemented!();
+        // Extract new record id
+
+        let response = &self.get_record_list(record_name, &new_zone_version);
+
+        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
+
+        let caps = regex.captures(&*response.body).unwrap();
+
+        let new_record_id = caps.at(1).unwrap().parse::<u32>().ok().unwrap();
+
+        debug!("New record id: {}", new_record_id);
+
+        // Update zone with the new record
+
+        let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
+        request = request.argument(&self.zone_id.unwrap());
+        request = request.argument(&new_zone_version);
+
+        #[derive(Debug,RustcEncodable,RustcDecodable)]
+        struct NewRecordId { id: u32 };
+        request = request.argument(&NewRecordId{ id: new_record_id });
+
+        #[derive(Debug,RustcEncodable,RustcDecodable)]
+        struct Record {
+            name: String,
+            type_: String,
+            value: String,
+        }
+
+        let record = Record {
+            name: record_name.to_string(),
+            type_: "A".to_string(),
+            value: ip_addr.to_string(),
+        };
+
+        request = request.argument(&record);
+
+        request = request.finalize();
+
+        // Horrible hack, because 'type' is a reserved keyword ...
+        request.body = request.body.replace("type_", "type");
+
+        client.remote_call(&request); // ignore response
+
+        // Activate the new zone
+        debug!("Activate version '{}' of the zone '{}'", new_zone_version, &self.zone_id.unwrap());
+
+        let (client, mut request) = self.get_gandi_client("domain.zone.version.set");
+        request = request.argument(&self.zone_id.unwrap());
+        request = request.argument(&new_zone_version);
+        request = request.finalize();
+
+        /*let response = */client.remote_call(&request);
+
+        // let regex = Regex::new(r"<boolean>([0-1]+)</boolean>").unwrap();
+
+        // let caps = regex.captures(&*response.body).unwrap();
+
+        // let result = caps.at(1).unwrap();
+
+        // debug!("Activate version result: {}", result);
+
+        // match result {
+        //     "1" => true,
+        //     "0" | _ => false,
+        // }
+        true
     }
 
     fn create_record(&self, record_name: &str, ip_addr: &str) {
@@ -114,11 +177,16 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
 
 impl<'a> GandiAPIImpl<'a> {
 
+    fn get_gandi_client(&self, rpc_action: &str) -> (xmlrpc::Client, xmlrpc::Request) {
+        let client = xmlrpc::Client::new(self.xmlrpc_server);
+        let mut request = xmlrpc::Request::new(rpc_action);
+        request = request.argument(&self.apikey.to_string());
+        (client, request)
+    }
+
     fn get_record_list(&self, record_name: &str, zone_id_version: &u16) -> xmlrpc::Response {
 
-        let client = xmlrpc::Client::new(self.xmlrpc_server);
-        let mut request = xmlrpc::Request::new("domain.zone.record.list");
-        request = request.argument(&self.apikey.to_string());
+        let (client, mut request) = self.get_gandi_client("domain.zone.record.list");
         request = request.argument(&self.zone_id.unwrap());
         request = request.argument(zone_id_version);
 
@@ -150,6 +218,7 @@ fn main() {
             "-a --apikey=[apikey] 'Your API key provided by Gandi'
             -d --domain=[domain] 'The domain name whose active zonefile will be updated, e.g. \"domain.com\"'
             -n --dry-run 'Dry run, don't really update Gandi zone file'
+            -f --force 'Force new zonefile creation even if IP address isn\'t modified'
             [verbose]... -v 'Verbose mode'")
         .arg(Arg::with_name("record_name")
             .help("Name of the A record to update or create (without domain)")
@@ -184,6 +253,9 @@ fn main() {
     let dry_run = matches.is_present("dry-run");
     debug!("Dry run: {}", dry_run);
 
+    let force = matches.is_present("force");
+    debug!("Force: {}", force);
+
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
         Ok(_) => {
@@ -204,11 +276,12 @@ fn main() {
         Some(ip_addr) => {
             debug!("Record already declared, with IP address: {}", &ip_addr);
 
-            if &ip_addr == detected_ip_addr {
-                debug!("IP address unmodified, no record to update");
+            if !force && (&ip_addr == detected_ip_addr) {
+                debug!("IP address not modified, no record to update");
             } else {
                 debug!("Update record '{}' with IP address '{}'", record_name, &ip_addr);
-                gandi_api.update_record(record_name, &ip_addr);
+                let result = gandi_api.update_record(record_name, &ip_addr);
+                debug!("End of update process with result: {}", result);
             }
         }
     //     None => gandi_api.createRecord(record_name, detectedIpAddr)
