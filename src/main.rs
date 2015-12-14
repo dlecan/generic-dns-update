@@ -6,19 +6,24 @@ extern crate log;
 extern crate env_logger;
 
 extern crate xmlrpc;
+extern crate rustc_serialize;
+
+extern crate regex;
 
 use clap::{Arg, App};
 use std::env;
 use std::io;
 use std::io::prelude::*;
 
+use regex::Regex;
+
 const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
 
 trait GandiAPI {
     fn init(&mut self, domain: &str);
-    fn is_record_already_declared(&self, record: &str) -> Option<&str>;
-    fn update_record(&self, record: &str, ip_addr: &str);
-    fn create_record(&self, record: &str, ip_addr: &str);
+    fn is_record_already_declared(&self, record_name: &str) -> Option<String>;
+    fn update_record(&self, record_name: &str, ip_addr: &str);
+    fn create_record(&self, record_name: &str, ip_addr: &str);
 }
 
 struct GandiAPIImpl<'a> {
@@ -62,15 +67,47 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
         debug!("Zone id: {}", self.zone_id.unwrap());
     }
 
-    fn is_record_already_declared(&self, record: &str) -> Option<&str> {
+    fn is_record_already_declared(&self, record_name: &str) -> Option<String> {
+
+        let client = xmlrpc::Client::new(self.xmlrpc_server);
+        let mut request = xmlrpc::Request::new("domain.zone.record.list");
+        request = request.argument(&self.apikey.to_string());
+        request = request.argument(&self.zone_id.unwrap());
+        request = request.argument(&0);
+
+        #[derive(Debug,RustcEncodable,RustcDecodable)]
+        struct Record {
+            name: String,
+            type_: String,
+        }
+
+        let record = Record { name: record_name.to_string(), type_: "A".to_string() };
+
+        request = request.argument(&record);
+
+        request = request.finalize();
+
+        // Horrible hack, because 'type' is a reserved keyword ...
+        request.body = request.body.replace("type_", "type");
+
+        let response = client.remote_call(&request).unwrap();
+
+        // Extract already configured IP address
+        // We are looking for something like that: <value><string>55.32.210.10</string></value>
+        let regex = Regex::new(r"<value><string>([0-9.]*)</string></value>").unwrap();
+
+        let caps = regex.captures(&*response.body);
+
+        caps
+            .map_or(None, |caps| caps.at(1))
+            .map(|val| val.to_string())
+    }
+
+    fn update_record(&self, record_name: &str, ip_addr: &str) {
         unimplemented!();
     }
 
-    fn update_record(&self, record: &str, ip_addr: &str) {
-        unimplemented!();
-    }
-
-    fn create_record(&self, record: &str, ip_addr: &str) {
+    fn create_record(&self, record_name: &str, ip_addr: &str) {
         unimplemented!();
     }
 }
@@ -120,7 +157,7 @@ fn main() {
 
     let mut input = String::new();
     match io::stdin().read_line(&mut input) {
-        Ok(n) => {
+        Ok(_) => {
             println!("Input: {}", input);
         }
         Err(error) => println!("error: {}", error),
@@ -132,15 +169,21 @@ fn main() {
 
     gandi_api.init(domain);
 
-    // let maybeChecked = gandi_api.isRecordAlreadyDeclared(record_name);
+    let maybe_checked = gandi_api.is_record_already_declared(record_name);
 
-    // match maybeChecked {
-    //     Some(ipAddr) => {
-    //         if ipAddr != detectedIpAddr {
-    //             gandi_api.updateRecord(record_name, ipAddr);
-    //         }
-    //     }
+    match maybe_checked {
+        Some(ip_addr) => {
+            debug!("Record already declared, with IP address: {}", &ip_addr);
+
+            if &ip_addr == detected_ip_addr {
+                debug!("IP address unmodified, no record to update");
+            } else {
+                debug!("Update record '{}' with IP address '{}'", record_name, &ip_addr);
+                gandi_api.update_record(record_name, &ip_addr);
+            }
+        }
     //     None => gandi_api.createRecord(record_name, detectedIpAddr)
-    // }
+        None => ()
+    }
 
 }

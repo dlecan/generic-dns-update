@@ -11,3 +11,5 @@ clap = "1"
 log = "*"
 env_logger = "*"
 rust-xmlrpc = { git = "https://github.com/dlecan/rust-xmlrpc.git"}
+rustc-serialize = "0.3"
+regex = "0.1"
