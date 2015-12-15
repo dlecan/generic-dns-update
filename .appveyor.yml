@@ -10,6 +10,7 @@ install:
   - ps: $env:PATH="$env:PATH;C:\rust\bin"
   - rustc -vV
   - cargo -vV
+  - gcc --version
 build: false
 build_script:
   - cargo build --release
