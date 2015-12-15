@@ -87,63 +87,19 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
 
         // Create a new zone and get return version
 
-        let (client, mut request) = self.get_gandi_client("domain.zone.version.new");
-        request = request.argument(&self.zone_id.unwrap());
-        request = request.finalize();
-
-        let response = client.remote_call(&request).unwrap();
-
-        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
-
-        let caps = regex.captures(&*response.body).unwrap();
-
-        let new_zone_version = caps.at(1).unwrap().parse::<u16>().ok().unwrap();
+        let new_zone_version = &self.create_new_zone();
 
         debug!("New zone version: {}", new_zone_version);
 
         // Extract new record id
 
-        let response = &self.get_record_list(record_name, &new_zone_version);
-
-        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
-
-        let caps = regex.captures(&*response.body).unwrap();
-
-        let new_record_id = caps.at(1).unwrap().parse::<u32>().ok().unwrap();
+        let new_record_id = &self.get_record_id(record_name, &new_zone_version);
 
         debug!("New record id: {}", new_record_id);
 
         // Update zone with the new record
 
-        let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
-        request = request.argument(&self.zone_id.unwrap());
-        request = request.argument(&new_zone_version);
-
-        #[derive(Debug,RustcEncodable,RustcDecodable)]
-        struct NewRecordId { id: u32 };
-        request = request.argument(&NewRecordId{ id: new_record_id });
-
-        #[derive(Debug,RustcEncodable,RustcDecodable)]
-        struct Record {
-            name: String,
-            type_: String,
-            value: String,
-        }
-
-        let record = Record {
-            name: record_name.to_string(),
-            type_: "A".to_string(),
-            value: ip_addr.to_string(),
-        };
-
-        request = request.argument(&record);
-
-        request = request.finalize();
-
-        // Horrible hack, because 'type' is a reserved keyword ...
-        request.body = request.body.replace("type_", "type");
-
-        client.remote_call(&request); // ignore response
+        &self.update_zone_with_record(record_name, ip_addr, new_zone_version, new_record_id);
 
         // Activate the new zone
         debug!("Activate version '{}' of the zone '{}'", new_zone_version, &self.zone_id.unwrap());
@@ -153,21 +109,20 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
         request = request.argument(&new_zone_version);
         request = request.finalize();
 
-        /*let response = */client.remote_call(&request);
+        let response = client.remote_call(&request).unwrap();
 
-        // let regex = Regex::new(r"<boolean>([0-1]+)</boolean>").unwrap();
+        let regex = Regex::new(r"<boolean>([0-1]*)</boolean>").unwrap();
 
-        // let caps = regex.captures(&*response.body).unwrap();
+        let caps = regex.captures(&*response.body).unwrap();
 
-        // let result = caps.at(1).unwrap();
+        let result = caps.at(1).unwrap();
 
-        // debug!("Activate version result: {}", result);
+        debug!("Activate version result: {}", result);
 
-        // match result {
-        //     "1" => true,
-        //     "0" | _ => false,
-        // }
-        true
+        match result {
+            "1" => true,
+            "0" | _ => false,
+        }
     }
 
     fn create_record(&self, record_name: &str, ip_addr: &str) {
@@ -206,6 +161,62 @@ impl<'a> GandiAPIImpl<'a> {
         request.body = request.body.replace("type_", "type");
 
         client.remote_call(&request).unwrap()
+    }
+
+    fn create_new_zone(&self) -> u16 {
+        let (client, mut request) = self.get_gandi_client("domain.zone.version.new");
+        request = request.argument(&self.zone_id.unwrap());
+        request = request.finalize();
+
+        let response = client.remote_call(&request).unwrap();
+
+        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
+
+        let caps = regex.captures(&*response.body).unwrap();
+
+        caps.at(1).unwrap().parse::<u16>().ok().unwrap()
+    }
+
+    fn get_record_id(&self, record_name: &str, new_zone_version: &u16) -> u32 {
+        let response = &self.get_record_list(record_name, new_zone_version);
+
+        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
+
+        let caps = regex.captures(&*response.body).unwrap();
+
+        caps.at(1).unwrap().parse::<u32>().ok().unwrap()
+    }
+
+    fn update_zone_with_record(&self, record_name: &str, ip_addr: &str, new_zone_version: &u16, new_record_id: &u32) {
+        let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
+        request = request.argument(&self.zone_id.unwrap());
+        request = request.argument(new_zone_version);
+
+        #[derive(Debug,RustcEncodable,RustcDecodable)]
+        struct NewRecordId { id: u32 };
+        request = request.argument(&NewRecordId{ id: *new_record_id });
+
+        #[derive(Debug,RustcEncodable,RustcDecodable)]
+        struct Record {
+            name: String,
+            type_: String,
+            value: String,
+        }
+
+        let record = Record {
+            name: record_name.to_string(),
+            type_: "A".to_string(),
+            value: ip_addr.to_string(),
+        };
+
+        request = request.argument(&record);
+
+        request = request.finalize();
+
+        // Horrible hack, because 'type' is a reserved keyword ...
+        request.body = request.body.replace("type_", "type");
+
+        client.remote_call(&request); // ignore response
     }
 }
 
