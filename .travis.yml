@@ -30,9 +30,6 @@ addons:
   apt_packages:
   - rpm
 
-install:
-  - gem install fpm
-
 before_script:
   - export DEPLOYMENT_ENV=$ARCH-$TRAVIS_RUST_VERSION
 
