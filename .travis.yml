@@ -1,24 +1,45 @@
 language: rust
+
 rust:
-- stable
-- beta
-- nightly
+  - stable
+  - beta
+  - nightly
+env:
+  - ARCH=x86_64
+  - ARCH=armv6
+
 matrix:
   fast_finish: true
+
   allow_failures:
   - rust: nightly
+  - env: ARCH=armv6
+
+  exclude:
+  - rust: beta
+    env: ARCH=armv6
+  - rust: nightly
+    env: ARCH=armv6
+
 sudo: required
 dist: trusty
 services:
   - docker
+
 addons:
   apt_packages:
   - rpm
   - g++-multilib
+
 install:
-- gem install fpm
+  - gem install fpm
+
+script:
+  - ./scripts/build.sh
+
 before_deploy:
-- ./scripts/package.sh
+  - export DEPLOYMENT_ENV=$ARCH-$TRAVIS_RUST_VERSION
+  - ./scripts/package.sh
 deploy:
 
 ###################################################################################
@@ -36,7 +57,7 @@ deploy:
     package_glob: "**/*amd64*.deb"
     on:
       branch: master
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = x86_64-stable"
   - provider: packagecloud
     repository: gdu-nightlies
     username: dlecan
@@ -48,7 +69,7 @@ deploy:
     package_glob: "**/*armhf*.deb"
     on:
       branch: master
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = armv6-stable"
 
 ###################################################################################
 ## Release artifacts
@@ -67,7 +88,7 @@ deploy:
     package_glob: "**/*amd64*.deb"
     on:
       tags: true
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = x86_64-stable"
   - provider: packagecloud
     repository: gandi-dns-updater
     username: dlecan
@@ -79,7 +100,7 @@ deploy:
     package_glob: "**/*amd64*.deb"
     on:
       tags: true
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = x86_64-stable"
 
 ## Raspbian
 
@@ -94,7 +115,7 @@ deploy:
     package_glob: "**/*armhf*.deb"
     on:
       tags: true
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = armv6-stable"
   - provider: packagecloud
     repository: gandi-dns-updater
     username: dlecan
@@ -106,7 +127,7 @@ deploy:
     package_glob: "**/*armhf*.deb"
     on:
       tags: true
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = armv6-stable"
 
 ## Debian
 
@@ -121,7 +142,7 @@ deploy:
     package_glob: "**/*amd64*.deb"
     on:
       tags: true
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = x86_64-stable"
   - provider: packagecloud
     repository: gandi-dns-updater
     username: dlecan
@@ -133,7 +154,7 @@ deploy:
     package_glob: "**/*amd64*.deb"
     on:
       tags: true
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = x86_64-stable"
 
 ## Fedora
 
@@ -148,4 +169,4 @@ deploy:
     package_glob: "**/*x86_64*.rpm"
     on:
       tags: true
-      condition: "$TRAVIS_RUST_VERSION = stable"
+      condition: "$DEPLOYMENT_ENV = x86_64-stable"
