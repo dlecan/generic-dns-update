@@ -34,11 +34,13 @@ addons:
 install:
   - gem install fpm
 
+before_script:
+  - export DEPLOYMENT_ENV=$ARCH-$TRAVIS_RUST_VERSION
+
 script:
   - ./scripts/build.sh
 
 before_deploy:
-  - export DEPLOYMENT_ENV=$ARCH-$TRAVIS_RUST_VERSION
   - ./scripts/package.sh
 deploy:
 
