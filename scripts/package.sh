@@ -64,7 +64,7 @@ else
 
     docker run -it --rm \
       -v $(pwd):/source \
-      dlecan/rust-x86_64-armv6 \
+      dlecan/rust-x86_64-armv6:stable \
       cargo build --release --target arm-unknown-linux-gnueabihf
 
     fpm \
