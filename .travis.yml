@@ -29,7 +29,6 @@ services:
 addons:
   apt_packages:
   - rpm
-  - g++-multilib
 
 install:
   - gem install fpm
