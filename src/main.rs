@@ -19,24 +19,24 @@ use regex::Regex;
 
 const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
 
-trait GandiAPI {
+trait DNSProvider {
     fn init(&mut self, domain: &str);
     fn is_record_already_declared(&self, record_name: &str) -> Option<String>;
     fn update_record(&self, record_name: &str, ip_addr: &str) -> bool;
     fn create_record(&self, record_name: &str, ip_addr: &str);
 }
 
-struct GandiAPIImpl<'a> {
+struct GandiDNSProvider<'a> {
   xmlrpc_server: &'a str,
   apikey: &'a str,
   zone_id: Option<u32>,
   zone_id_version: u16,
 }
 
-impl<'a> GandiAPIImpl<'a> {
+impl<'a> GandiDNSProvider<'a> {
 
-    fn new(gandi_url: &'a str, gandi_apikey: &'a str) -> GandiAPIImpl<'a> {
-        GandiAPIImpl {
+    fn new(gandi_url: &'a str, gandi_apikey: &'a str) -> GandiDNSProvider<'a> {
+        GandiDNSProvider {
             xmlrpc_server: gandi_url,
             apikey: gandi_apikey,
             zone_id: None,
@@ -45,7 +45,7 @@ impl<'a> GandiAPIImpl<'a> {
     }
 }
 
-impl<'a> GandiAPI for GandiAPIImpl<'a> {
+impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn init(&mut self, domain: &str) {
 
@@ -130,7 +130,7 @@ impl<'a> GandiAPI for GandiAPIImpl<'a> {
     }
 }
 
-impl<'a> GandiAPIImpl<'a> {
+impl<'a> GandiDNSProvider<'a> {
 
     fn get_gandi_client(&self, rpc_action: &str) -> (xmlrpc::Client, xmlrpc::Request) {
         let client = xmlrpc::Client::new(self.xmlrpc_server);
@@ -275,28 +275,27 @@ fn main() {
         Err(error) => println!("error: {}", error),
     }
 
-    let detected_ip_addr = input.trim();
+    let expected_ip_addr = input.trim();
 
-    let mut gandi_api = GandiAPIImpl::new(GANDI_URL_PROD, apikey);
+    let mut dns_provider = GandiDNSProvider::new(GANDI_URL_PROD, apikey);
 
-    gandi_api.init(domain);
+    dns_provider.init(domain);
 
-    let maybe_checked = gandi_api.is_record_already_declared(record_name);
+    let maybe_checked = dns_provider.is_record_already_declared(record_name);
 
     match maybe_checked {
         Some(ip_addr) => {
             debug!("Record already declared, with IP address: {}", &ip_addr);
 
-            if !force && (&ip_addr == detected_ip_addr) {
+            if !force && (&ip_addr == expected_ip_addr) {
                 debug!("IP address not modified, no record to update");
             } else {
-                debug!("Update record '{}' with IP address '{}'", record_name, &ip_addr);
-                let result = gandi_api.update_record(record_name, &ip_addr);
+                debug!("Update record '{}' with IP address '{}'", record_name, &expected_ip_addr);
+                let result = dns_provider.update_record(record_name, &expected_ip_addr);
                 debug!("End of update process with result: {}", result);
             }
         }
-    //     None => gandi_api.createRecord(record_name, detectedIpAddr)
-        None => ()
+        None => dns_provider.create_record(record_name, expected_ip_addr)
     }
 
 }
