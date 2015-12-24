@@ -32,7 +32,6 @@ struct GandiDNSProvider<'a> {
 }
 
 impl<'a> GandiDNSProvider<'a> {
-
     fn new(gandi_url: &'a str, gandi_apikey: &'a str) -> GandiDNSProvider<'a> {
 
         let gandi_rpc = GandiRPC {
@@ -48,7 +47,6 @@ impl<'a> GandiDNSProvider<'a> {
 }
 
 impl<'a> DNSProvider for GandiDNSProvider<'a> {
-
     fn init(&mut self, domain: &str) {
 
         let response = &self.gandi_rpc.get_domain_info(domain);
@@ -76,8 +74,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         let caps = regex.captures(&*response.body);
 
-        caps
-            .map_or(None, |caps| caps.at(1))
+        caps.map_or(None, |caps| caps.at(1))
             .map(|val| val.to_string())
     }
 
@@ -91,16 +88,23 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         // Extract new record id
 
-        let new_record_id = &self.gandi_rpc.get_record_id(record_name, &self.zone_id, &new_zone_version);
+        let new_record_id = &self.gandi_rpc
+                                 .get_record_id(record_name, &self.zone_id, &new_zone_version);
 
         debug!("New record id: {}", new_record_id);
 
         // Update zone with the new record
 
-        &self.gandi_rpc.update_zone_with_record(record_name, ip_addr, &self.zone_id, new_zone_version, new_record_id);
+        &self.gandi_rpc.update_zone_with_record(record_name,
+                                                ip_addr,
+                                                &self.zone_id,
+                                                new_zone_version,
+                                                new_record_id);
 
         // Activate the new zone
-        debug!("Activate version '{}' of the zone '{}'", new_zone_version, &self.zone_id);
+        debug!("Activate version '{}' of the zone '{}'",
+               new_zone_version,
+               &self.zone_id);
 
         self.gandi_rpc.update_zone_version(&self.zone_id, &new_zone_version)
     }
@@ -116,7 +120,6 @@ struct GandiRPC<'a> {
 }
 
 impl<'a> GandiRPC<'a> {
-
     fn get_gandi_client(&self, rpc_action: &str) -> (xmlrpc::Client, xmlrpc::Request) {
         let client = xmlrpc::Client::new(self.xmlrpc_server);
         let mut request = xmlrpc::Request::new(rpc_action);
@@ -132,7 +135,11 @@ impl<'a> GandiRPC<'a> {
         client.remote_call(&request).unwrap()
     }
 
-    fn get_record_list(&self, record_name: &str, zone_id: &u32, zone_version: &u16) -> xmlrpc::Response {
+    fn get_record_list(&self,
+                       record_name: &str,
+                       zone_id: &u32,
+                       zone_version: &u16)
+                       -> xmlrpc::Response {
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.list");
         request = request.argument(zone_id);
@@ -144,7 +151,10 @@ impl<'a> GandiRPC<'a> {
             type_: String,
         }
 
-        let record = Record { name: record_name.to_string(), type_: "A".to_string() };
+        let record = Record {
+            name: record_name.to_string(),
+            type_: "A".to_string(),
+        };
 
         request = request.argument(&record);
 
@@ -180,14 +190,21 @@ impl<'a> GandiRPC<'a> {
         caps.at(1).unwrap().parse::<u32>().ok().unwrap()
     }
 
-    fn update_zone_with_record(&self, record_name: &str, ip_addr: &str, zone_id: &u32, zone_version: &u16, new_record_id: &u32) {
+    fn update_zone_with_record(&self,
+                               record_name: &str,
+                               ip_addr: &str,
+                               zone_id: &u32,
+                               zone_version: &u16,
+                               new_record_id: &u32) {
         let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
         request = request.argument(zone_id);
         request = request.argument(zone_version);
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
-        struct NewRecordId { id: u32 };
-        request = request.argument(&NewRecordId{ id: *new_record_id });
+        struct NewRecordId {
+            id: u32,
+        };
+        request = request.argument(&NewRecordId { id: *new_record_id });
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
         struct Record {
@@ -259,13 +276,13 @@ fn main() {
     match matches.occurrences_of("verbose") {
         0 => (),
         1 => {
-                println!("Verbose mode");
-                env::set_var("RUST_LOG", "DEBUG");
-            },
+            println!("Verbose mode");
+            env::set_var("RUST_LOG", "DEBUG");
+        }
         2 | _=> {
-                println!("More verbose mode");
-                env::set_var("RUST_LOG", "TRACE");
-            }
+            println!("More verbose mode");
+            env::set_var("RUST_LOG", "TRACE");
+        }
     }
     env_logger::init().unwrap();
 
