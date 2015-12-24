@@ -27,8 +27,7 @@ trait DNSProvider {
 }
 
 struct GandiDNSProvider<'a> {
-    zone_id: Option<u32>,
-    zone_id_version: u16,
+    zone_id: u32,
     gandi_rpc: GandiRPC<'a>,
 }
 
@@ -42,8 +41,7 @@ impl<'a> GandiDNSProvider<'a> {
         };
 
         GandiDNSProvider {
-            zone_id: None,
-            zone_id_version: 0,
+            zone_id: 0,
             gandi_rpc: gandi_rpc,
         }
     }
@@ -63,14 +61,14 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         let (_, body_end) = body_end.split_at(first_int_markup + "<int>".len());
         let first_end_int_markup = body_end.find("</int>").unwrap();
         let (zone_id, _) = body_end.split_at(first_end_int_markup);
-        self.zone_id = zone_id.parse::<u32>().ok();
+        self.zone_id = zone_id.parse::<u32>().ok().unwrap();
 
-        debug!("Zone id: {}", self.zone_id.unwrap());
+        debug!("Zone id: {}", self.zone_id);
     }
 
     fn is_record_already_declared(&self, record_name: &str) -> Option<String> {
 
-        let response = &self.gandi_rpc.get_record_list(record_name, &self.zone_id.unwrap(), &self.zone_id_version);
+        let response = &self.gandi_rpc.get_record_list(record_name, &self.zone_id, &0);
 
         // Extract already configured IP address
         // We are looking for something like that: <value><string>55.32.210.10</string></value>
@@ -85,26 +83,26 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn update_record(&self, record_name: &str, ip_addr: &str) -> bool {
 
-        // Create a new zone and get return version
+        // Create a new zone and get returned version
 
-        let new_zone_version = &self.gandi_rpc.create_new_zone(&self.zone_id.unwrap());
+        let new_zone_version = &self.gandi_rpc.create_new_zone(&self.zone_id);
 
         debug!("New zone version: {}", new_zone_version);
 
         // Extract new record id
 
-        let new_record_id = &self.gandi_rpc.get_record_id(record_name, &self.zone_id.unwrap(), &new_zone_version);
+        let new_record_id = &self.gandi_rpc.get_record_id(record_name, &self.zone_id, &new_zone_version);
 
         debug!("New record id: {}", new_record_id);
 
         // Update zone with the new record
 
-        &self.gandi_rpc.update_zone_with_record(record_name, ip_addr, &self.zone_id.unwrap(), new_zone_version, new_record_id);
+        &self.gandi_rpc.update_zone_with_record(record_name, ip_addr, &self.zone_id, new_zone_version, new_record_id);
 
         // Activate the new zone
-        debug!("Activate version '{}' of the zone '{}'", new_zone_version, &self.zone_id.unwrap());
+        debug!("Activate version '{}' of the zone '{}'", new_zone_version, &self.zone_id);
 
-        self.gandi_rpc.update_zone_version(&self.zone_id.unwrap(), &new_zone_version)
+        self.gandi_rpc.update_zone_version(&self.zone_id, &new_zone_version)
     }
 
     fn create_record(&self, record_name: &str, ip_addr: &str) {
@@ -134,11 +132,11 @@ impl<'a> GandiRPC<'a> {
         client.remote_call(&request).unwrap()
     }
 
-    fn get_record_list(&self, record_name: &str, zone_id: &u32, zone_id_version: &u16) -> xmlrpc::Response {
+    fn get_record_list(&self, record_name: &str, zone_id: &u32, zone_version: &u16) -> xmlrpc::Response {
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.list");
         request = request.argument(zone_id);
-        request = request.argument(zone_id_version);
+        request = request.argument(zone_version);
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
         struct Record {
@@ -172,8 +170,8 @@ impl<'a> GandiRPC<'a> {
         caps.at(1).unwrap().parse::<u16>().ok().unwrap()
     }
 
-    fn get_record_id(&self, record_name: &str, zone_id: &u32, new_zone_version: &u16) -> u32 {
-        let response = &self.get_record_list(record_name, zone_id, new_zone_version);
+    fn get_record_id(&self, record_name: &str, zone_id: &u32, zone_version: &u16) -> u32 {
+        let response = &self.get_record_list(record_name, zone_id, zone_version);
 
         let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
 
@@ -182,10 +180,10 @@ impl<'a> GandiRPC<'a> {
         caps.at(1).unwrap().parse::<u32>().ok().unwrap()
     }
 
-    fn update_zone_with_record(&self, record_name: &str, ip_addr: &str, zone_id: &u32, new_zone_version: &u16, new_record_id: &u32) {
+    fn update_zone_with_record(&self, record_name: &str, ip_addr: &str, zone_id: &u32, zone_version: &u16, new_record_id: &u32) {
         let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
         request = request.argument(zone_id);
-        request = request.argument(new_zone_version);
+        request = request.argument(zone_version);
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
         struct NewRecordId { id: u32 };
