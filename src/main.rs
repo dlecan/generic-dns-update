@@ -27,20 +27,24 @@ trait DNSProvider {
 }
 
 struct GandiDNSProvider<'a> {
-  xmlrpc_server: &'a str,
-  apikey: &'a str,
-  zone_id: Option<u32>,
-  zone_id_version: u16,
+    zone_id: Option<u32>,
+    zone_id_version: u16,
+    gandi_rpc: GandiRPC<'a>,
 }
 
 impl<'a> GandiDNSProvider<'a> {
 
     fn new(gandi_url: &'a str, gandi_apikey: &'a str) -> GandiDNSProvider<'a> {
-        GandiDNSProvider {
+
+        let gandi_rpc = GandiRPC {
             xmlrpc_server: gandi_url,
             apikey: gandi_apikey,
+        };
+
+        GandiDNSProvider {
             zone_id: None,
             zone_id_version: 0,
+            gandi_rpc: gandi_rpc,
         }
     }
 }
@@ -49,7 +53,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn init(&mut self, domain: &str) {
 
-        let (client, mut request) = self.get_gandi_client("domain.info");
+        let (client, mut request) = self.gandi_rpc.get_gandi_client("domain.info");
         request = request.argument(&domain.to_string());
         request = request.finalize();
 
@@ -70,7 +74,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn is_record_already_declared(&self, record_name: &str) -> Option<String> {
 
-        let response = &self.get_record_list(record_name, &self.zone_id_version);
+        let response = &self.gandi_rpc.get_record_list(record_name, &self.zone_id.unwrap(), &self.zone_id_version);
 
         // Extract already configured IP address
         // We are looking for something like that: <value><string>55.32.210.10</string></value>
@@ -87,24 +91,24 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         // Create a new zone and get return version
 
-        let new_zone_version = &self.create_new_zone();
+        let new_zone_version = &self.gandi_rpc.create_new_zone(&self.zone_id.unwrap());
 
         debug!("New zone version: {}", new_zone_version);
 
         // Extract new record id
 
-        let new_record_id = &self.get_record_id(record_name, &new_zone_version);
+        let new_record_id = &self.gandi_rpc.get_record_id(record_name, &self.zone_id.unwrap(), &new_zone_version);
 
         debug!("New record id: {}", new_record_id);
 
         // Update zone with the new record
 
-        &self.update_zone_with_record(record_name, ip_addr, new_zone_version, new_record_id);
+        &self.gandi_rpc.update_zone_with_record(record_name, ip_addr, &self.zone_id.unwrap(), new_zone_version, new_record_id);
 
         // Activate the new zone
         debug!("Activate version '{}' of the zone '{}'", new_zone_version, &self.zone_id.unwrap());
 
-        let (client, mut request) = self.get_gandi_client("domain.zone.version.set");
+        let (client, mut request) = self.gandi_rpc.get_gandi_client("domain.zone.version.set");
         request = request.argument(&self.zone_id.unwrap());
         request = request.argument(&new_zone_version);
         request = request.finalize();
@@ -130,7 +134,12 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
     }
 }
 
-impl<'a> GandiDNSProvider<'a> {
+struct GandiRPC<'a> {
+    xmlrpc_server: &'a str,
+    apikey: &'a str,
+}
+
+impl<'a> GandiRPC<'a> {
 
     fn get_gandi_client(&self, rpc_action: &str) -> (xmlrpc::Client, xmlrpc::Request) {
         let client = xmlrpc::Client::new(self.xmlrpc_server);
@@ -139,10 +148,10 @@ impl<'a> GandiDNSProvider<'a> {
         (client, request)
     }
 
-    fn get_record_list(&self, record_name: &str, zone_id_version: &u16) -> xmlrpc::Response {
+    fn get_record_list(&self, record_name: &str, zone_id: &u32, zone_id_version: &u16) -> xmlrpc::Response {
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.list");
-        request = request.argument(&self.zone_id.unwrap());
+        request = request.argument(zone_id);
         request = request.argument(zone_id_version);
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
@@ -163,9 +172,9 @@ impl<'a> GandiDNSProvider<'a> {
         client.remote_call(&request).unwrap()
     }
 
-    fn create_new_zone(&self) -> u16 {
+    fn create_new_zone(&self, zone_id: &u32) -> u16 {
         let (client, mut request) = self.get_gandi_client("domain.zone.version.new");
-        request = request.argument(&self.zone_id.unwrap());
+        request = request.argument(zone_id);
         request = request.finalize();
 
         let response = client.remote_call(&request).unwrap();
@@ -177,8 +186,8 @@ impl<'a> GandiDNSProvider<'a> {
         caps.at(1).unwrap().parse::<u16>().ok().unwrap()
     }
 
-    fn get_record_id(&self, record_name: &str, new_zone_version: &u16) -> u32 {
-        let response = &self.get_record_list(record_name, new_zone_version);
+    fn get_record_id(&self, record_name: &str, zone_id: &u32, new_zone_version: &u16) -> u32 {
+        let response = &self.get_record_list(record_name, zone_id, new_zone_version);
 
         let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
 
@@ -187,9 +196,9 @@ impl<'a> GandiDNSProvider<'a> {
         caps.at(1).unwrap().parse::<u32>().ok().unwrap()
     }
 
-    fn update_zone_with_record(&self, record_name: &str, ip_addr: &str, new_zone_version: &u16, new_record_id: &u32) {
+    fn update_zone_with_record(&self, record_name: &str, ip_addr: &str, zone_id: &u32, new_zone_version: &u16, new_record_id: &u32) {
         let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
-        request = request.argument(&self.zone_id.unwrap());
+        request = request.argument(zone_id);
         request = request.argument(new_zone_version);
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
