@@ -53,11 +53,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn init(&mut self, domain: &str) {
 
-        let (client, mut request) = self.gandi_rpc.get_gandi_client("domain.info");
-        request = request.argument(&domain.to_string());
-        request = request.finalize();
-
-        let response = client.remote_call(&request).unwrap();
+        let response = &self.gandi_rpc.get_domain_info(domain);
 
         // TODO: fix this ugly code
         // Handle errors
@@ -108,25 +104,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         // Activate the new zone
         debug!("Activate version '{}' of the zone '{}'", new_zone_version, &self.zone_id.unwrap());
 
-        let (client, mut request) = self.gandi_rpc.get_gandi_client("domain.zone.version.set");
-        request = request.argument(&self.zone_id.unwrap());
-        request = request.argument(&new_zone_version);
-        request = request.finalize();
-
-        let response = client.remote_call(&request).unwrap();
-
-        let regex = Regex::new(r"<boolean>([0-1]*)</boolean>").unwrap();
-
-        let caps = regex.captures(&*response.body).unwrap();
-
-        let result = caps.at(1).unwrap();
-
-        debug!("Activate version result: {}", result);
-
-        match result {
-            "1" => true,
-            "0" | _ => false,
-        }
+        self.gandi_rpc.update_zone_version(&self.zone_id.unwrap(), &new_zone_version)
     }
 
     fn create_record(&self, record_name: &str, ip_addr: &str) {
@@ -146,6 +124,14 @@ impl<'a> GandiRPC<'a> {
         let mut request = xmlrpc::Request::new(rpc_action);
         request = request.argument(&self.apikey.to_string());
         (client, request)
+    }
+
+    fn get_domain_info(&self, domain: &'a str) -> xmlrpc::Response {
+        let (client, mut request) = self.get_gandi_client("domain.info");
+        request = request.argument(&domain.to_string());
+        request = request.finalize();
+
+        client.remote_call(&request).unwrap()
     }
 
     fn get_record_list(&self, record_name: &str, zone_id: &u32, zone_id_version: &u16) -> xmlrpc::Response {
@@ -226,6 +212,30 @@ impl<'a> GandiRPC<'a> {
         request.body = request.body.replace("type_", "type");
 
         client.remote_call(&request); // ignore response
+    }
+
+    fn update_zone_version(&self, zone_id: &u32, zone_version: &u16) -> bool {
+
+        let (client, mut request) = self.get_gandi_client("domain.zone.version.set");
+        request = request.argument(zone_id);
+        request = request.argument(zone_version);
+        request = request.finalize();
+
+        let response = client.remote_call(&request).unwrap();
+
+        let regex = Regex::new(r"<boolean>([0-1]*)</boolean>").unwrap();
+
+        let caps = regex.captures(&*response.body).unwrap();
+
+        let result = caps.at(1).unwrap();
+
+        debug!("Activate version result: {}", result);
+
+        match result {
+            "1" => true,
+            "0" | _ => false,
+        }
+
     }
 }
 
