@@ -20,10 +20,10 @@ then
     dlecan/rust-x86_64-armv6:stable \
     cargo build --verbose --target arm-unknown-linux-gnueabihf
 
-  docker run -it --rm \
-    -v $(pwd):/source \
-    dlecan/rust-x86_64-armv6:stable \
-    cargo test --verbose --target arm-unknown-linux-gnueabihf
+#  docker run -it --rm \
+#    -v $(pwd):/source \
+#    dlecan/rust-x86_64-armv6:stable \
+#    cargo test --verbose --target arm-unknown-linux-gnueabihf
 
 else
   echo "Unknown architecture!"
