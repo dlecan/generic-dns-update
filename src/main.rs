@@ -1,3 +1,6 @@
+// My IP address providers
+mod myip;
+
 // DNS providers
 mod dns;
 
@@ -15,10 +18,10 @@ extern crate regex;
 
 use clap::{Arg, App};
 use std::env;
-use std::io;
-use std::io::prelude::*;
 
 use dns::*;
+
+use myip::*;
 
 fn main() {
     let matches = App::new("gdu")
@@ -67,16 +70,11 @@ fn main() {
     let force = matches.is_present("force");
     debug!("Force: {}", force);
 
-    let mut input = String::new();
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {
-            println!("Input: {}", input);
-        }
-        Err(error) => println!("error: {}", error),
-    }
+    // Force Stdin IP provider for now
+    let ip_provider = StdinIpProvider;
+    let expected_ip_addr = ip_provider.get_my_ip_addr();
 
-    let expected_ip_addr = input.trim();
-
+    // Force Gandi DNS provider for now
     let mut dns_provider = dns::GandiDNSProvider::new(apikey);
 
     dns_provider.init(domain);
@@ -87,7 +85,7 @@ fn main() {
         Some(ip_addr) => {
             debug!("Record already declared, with IP address: {}", &ip_addr);
 
-            if !force && (&ip_addr == expected_ip_addr) {
+            if !force && (&ip_addr == &expected_ip_addr) {
                 debug!("IP address not modified, no record to update");
             } else {
                 debug!("Update record '{}' with IP address '{}'", record_name, &expected_ip_addr);
@@ -95,7 +93,7 @@ fn main() {
                 debug!("End of update process with result: {}", result);
             }
         }
-        None => dns_provider.create_record(record_name, expected_ip_addr)
+        None => dns_provider.create_record(record_name, &expected_ip_addr)
     }
 
 }
