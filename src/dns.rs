@@ -1,5 +1,6 @@
+use ip::IpAddr;
 use regex::Regex;
-
+use std::str::FromStr;
 use xmlrpc::Client as XMLRPCClient;
 use xmlrpc::Request as XMLRPCRequest;
 use xmlrpc::Response as XMLRPCResponse;
@@ -8,9 +9,9 @@ const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
 
 pub trait DNSProvider {
     fn init(&mut self, domain: &str);
-    fn is_record_already_declared(&self, record_name: &str) -> Option<String>;
-    fn update_record(&self, record_name: &str, ip_addr: &str) -> bool;
-    fn create_record(&self, record_name: &str, ip_addr: &str);
+    fn is_record_already_declared(&self, record_name: &str) -> Option<IpAddr>;
+    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> bool;
+    fn create_record(&self, record_name: &str, ip_addr: &IpAddr);
 }
 
 pub struct GandiDNSProvider<'a> {
@@ -51,7 +52,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         debug!("Zone id: {}", self.zone_id);
     }
 
-    fn is_record_already_declared(&self, record_name: &str) -> Option<String> {
+    fn is_record_already_declared(&self, record_name: &str) -> Option<IpAddr> {
 
         let response = &self.gandi_rpc.get_record_list(record_name, &self.zone_id, &0);
 
@@ -62,10 +63,10 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         let caps = regex.captures(&*response.body);
 
         caps.map_or(None, |caps| caps.at(1))
-            .map(|val| val.to_string())
+            .map(|val| IpAddr::from_str(val).unwrap())
     }
 
-    fn update_record(&self, record_name: &str, ip_addr: &str) -> bool {
+    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> bool {
 
         // Create a new zone and get returned version
 
@@ -96,7 +97,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         self.gandi_rpc.update_zone_version(&self.zone_id, &new_zone_version)
     }
 
-    fn create_record(&self, record_name: &str, ip_addr: &str) {
+    fn create_record(&self, record_name: &str, ip_addr: &IpAddr) {
         unimplemented!();
     }
 }
@@ -179,7 +180,7 @@ impl<'a> GandiRPC<'a> {
 
     fn update_zone_with_record(&self,
                                record_name: &str,
-                               ip_addr: &str,
+                               ip_addr: &IpAddr,
                                zone_id: &u32,
                                zone_version: &u16,
                                new_record_id: &u32) {

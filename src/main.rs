@@ -16,6 +16,8 @@ extern crate rustc_serialize;
 
 extern crate regex;
 
+extern crate ip;
+
 use clap::{Arg, App};
 use std::env;
 
