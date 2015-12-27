@@ -76,6 +76,11 @@ fn main() {
     let ip_provider = StdinIpProvider;
     let expected_ip_addr = ip_provider.get_my_ip_addr().unwrap();
 
+    match expected_ip_addr {
+        ip::IpAddr::V6(_) => panic!("IPv6 addresses are not currently handled by this program"),
+        _ => (),
+    }
+
     // Force Gandi DNS provider for now
     let mut dns_provider = dns::GandiDNSProvider::new(apikey);
 
