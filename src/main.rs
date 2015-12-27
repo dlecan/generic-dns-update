@@ -74,7 +74,7 @@ fn main() {
 
     // Force Stdin IP provider for now
     let ip_provider = StdinIpProvider;
-    let expected_ip_addr = ip_provider.get_my_ip_addr();
+    let expected_ip_addr = ip_provider.get_my_ip_addr().unwrap();
 
     // Force Gandi DNS provider for now
     let mut dns_provider = dns::GandiDNSProvider::new(apikey);
