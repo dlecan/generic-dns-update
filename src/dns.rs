@@ -9,6 +9,7 @@ const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
 
 pub trait DNSProvider {
     fn init(&mut self, domain: &str);
+    fn handle_ipv6_addr(&self) -> bool;
     fn is_record_already_declared(&self, record_name: &str) -> Option<IpAddr>;
     fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> bool;
     fn create_record(&self, record_name: &str, ip_addr: &IpAddr);
@@ -50,6 +51,11 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         self.zone_id = zone_id.parse::<u32>().ok().unwrap();
 
         debug!("Zone id: {}", self.zone_id);
+    }
+
+    fn handle_ipv6_addr(&self) -> bool {
+        // IPv6 addresses are not handled yet
+        false
     }
 
     fn is_record_already_declared(&self, record_name: &str) -> Option<IpAddr> {

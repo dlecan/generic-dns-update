@@ -76,15 +76,16 @@ fn main() {
     let ip_provider = StdinIpProvider;
     let expected_ip_addr = ip_provider.get_my_ip_addr().unwrap();
 
-    match expected_ip_addr {
-        ip::IpAddr::V6(_) => panic!("IPv6 addresses are not currently handled by this program"),
-        _ => (),
-    }
-
     // Force Gandi DNS provider for now
     let mut dns_provider = dns::GandiDNSProvider::new(apikey);
 
     dns_provider.init(domain);
+
+    match expected_ip_addr {
+        ip::IpAddr::V6(_)
+            if !dns_provider.handle_ipv6_addr() => panic!("You cannot use IP v6 addresses with the selected DNS provider"),
+        _ => (),
+    }
 
     let maybe_checked = dns_provider.is_record_already_declared(record_name);
 
