@@ -1,3 +1,5 @@
+mod error;
+
 // My IP address providers
 mod myip;
 
