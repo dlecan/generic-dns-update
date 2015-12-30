@@ -1,3 +1,4 @@
+use error::Result;
 use ip::IpAddr;
 use regex::Regex;
 use std::str::FromStr;
@@ -8,7 +9,7 @@ use xmlrpc::Response as XMLRPCResponse;
 const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
 
 pub trait DNSProvider {
-    fn init(&mut self, domain: &str);
+    fn init(&mut self, domain: &str) -> Result<()>;
     fn handle_ipv6_addr(&self) -> bool;
     fn is_record_already_declared(&self, record_name: &str) -> Option<IpAddr>;
     fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> bool;
@@ -36,7 +37,7 @@ impl<'a> GandiDNSProvider<'a> {
 }
 
 impl<'a> DNSProvider for GandiDNSProvider<'a> {
-    fn init(&mut self, domain: &str) {
+    fn init(&mut self, domain: &str) -> Result<()> {
 
         let response = &self.gandi_rpc.get_domain_info(domain);
 
@@ -48,9 +49,10 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         let (_, body_end) = body_end.split_at(first_int_markup + "<int>".len());
         let first_end_int_markup = body_end.find("</int>").unwrap();
         let (zone_id, _) = body_end.split_at(first_end_int_markup);
-        self.zone_id = zone_id.parse::<u32>().ok().unwrap();
+        self.zone_id = try!(zone_id.parse::<u32>());
 
         debug!("Zone id: {}", self.zone_id);
+        Ok(())
     }
 
     fn handle_ipv6_addr(&self) -> bool {
