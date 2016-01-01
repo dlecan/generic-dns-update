@@ -1,6 +1,6 @@
-pub struct Config<'a> {
-    pub apikey: &'a str,
-    pub domain: &'a str,
-    pub record_name: &'a str,
+pub struct Config {
+    pub apikey: String,
+    pub domain: String,
+    pub record_name: String,
     pub force: bool,
 }
