@@ -2,7 +2,6 @@ use error::Result;
 use ip::IpAddr;
 use std::io;
 use std::io::prelude::*;
-use std::net::{Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
 pub trait MyIPAddressProvider<'a> {

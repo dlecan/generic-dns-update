@@ -24,8 +24,9 @@ use clap::{Arg, App};
 use std::env;
 
 use dns::*;
-
+use error::Result;
 use myip::*;
+use std::process;
 
 fn main() {
     let matches = App::new("gdu")
@@ -74,14 +75,24 @@ fn main() {
     let force = matches.is_present("force");
     debug!("Force: {}", force);
 
+    match main_with_errors(apikey, domain, record_name, force) {
+        Ok(_) => info!("Process ends with success"),
+        Err(err) => {
+            error!("Process failed with result: {}", err);
+            process::exit(-1);
+        }
+    }
+}
+
+fn main_with_errors(apikey: &str, domain: &str, record_name: &str, force: bool) -> Result<()> {
     // Force Stdin IP provider for now
     let ip_provider = StdinIpProvider;
-    let expected_ip_addr = ip_provider.get_my_ip_addr().unwrap();
+    let expected_ip_addr = try!(ip_provider.get_my_ip_addr());
 
     // Force Gandi DNS provider for now
     let mut dns_provider = dns::GandiDNSProvider::new(apikey);
 
-    dns_provider.init(domain);
+    try!(dns_provider.init(domain));
 
     match expected_ip_addr {
         ip::IpAddr::V6(_)
@@ -89,7 +100,7 @@ fn main() {
         _ => (),
     }
 
-    let maybe_checked = dns_provider.is_record_already_declared(record_name);
+    let maybe_checked = try!(dns_provider.is_record_already_declared(record_name));
 
     match maybe_checked {
         Some(ip_addr) => {
@@ -97,13 +108,12 @@ fn main() {
 
             if !force && (&ip_addr == &expected_ip_addr) {
                 debug!("IP address not modified, no record to update");
+                Ok(())
             } else {
                 debug!("Update record '{}' with IP address '{}'", record_name, &expected_ip_addr);
-                let result = dns_provider.update_record(record_name, &expected_ip_addr);
-                debug!("End of update process with result: {}", result);
+                Ok(try!(dns_provider.update_record(record_name, &expected_ip_addr)))
             }
         }
-        None => dns_provider.create_record(record_name, &expected_ip_addr)
+        None => Ok(try!(dns_provider.create_record(record_name, &expected_ip_addr)))
     }
-
 }

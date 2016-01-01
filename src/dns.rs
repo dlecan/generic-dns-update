@@ -11,9 +11,9 @@ const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
 pub trait DNSProvider {
     fn init(&mut self, domain: &str) -> Result<()>;
     fn handle_ipv6_addr(&self) -> bool;
-    fn is_record_already_declared(&self, record_name: &str) -> Option<IpAddr>;
-    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> bool;
-    fn create_record(&self, record_name: &str, ip_addr: &IpAddr);
+    fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>>;
+    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()>;
+    fn create_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()>;
 }
 
 pub struct GandiDNSProvider<'a> {
@@ -49,6 +49,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         let (_, body_end) = body_end.split_at(first_int_markup + "<int>".len());
         let first_end_int_markup = body_end.find("</int>").unwrap();
         let (zone_id, _) = body_end.split_at(first_end_int_markup);
+
         self.zone_id = try!(zone_id.parse::<u32>());
 
         debug!("Zone id: {}", self.zone_id);
@@ -60,7 +61,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         false
     }
 
-    fn is_record_already_declared(&self, record_name: &str) -> Option<IpAddr> {
+    fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>> {
 
         let response = &self.gandi_rpc.get_record_list(record_name, &self.zone_id, &0);
 
@@ -70,11 +71,14 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         let caps = regex.captures(&*response.body);
 
-        caps.map_or(None, |caps| caps.at(1))
-            .map(|val| IpAddr::from_str(val).unwrap())
+        let result = caps.map_or(None, |caps| caps.at(1))
+            .map(|val| IpAddr::from_str(val).unwrap());
+
+        // TODO: handle correctly regex error
+        Ok(result)
     }
 
-    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> bool {
+    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()> {
 
         // Create a new zone and get returned version
 
@@ -102,10 +106,12 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
                new_zone_version,
                &self.zone_id);
 
-        self.gandi_rpc.update_zone_version(&self.zone_id, &new_zone_version)
+        self.gandi_rpc.update_zone_version(&self.zone_id, &new_zone_version);
+        // TODO: check previous result
+        Ok(())
     }
 
-    fn create_record(&self, record_name: &str, ip_addr: &IpAddr) {
+    fn create_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()> {
         unimplemented!();
     }
 }

@@ -17,7 +17,7 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 pub enum Error {
     Io(IoError),
     AddrParse(AddrParseError),
-    XmlRpcError(ParseIntError),
+    XmlRpcError(String),
 }
 
 impl fmt::Display for Error {
@@ -25,7 +25,7 @@ impl fmt::Display for Error {
         match *self {
             Io(ref err) => err.fmt(f),
             AddrParse(ref err) => err.fmt(f),
-            XmlRpcError(ref err) => err.fmt(f),
+            XmlRpcError(ref label) => f.write_str(label),
 //            Another => write!(f, "No matching cities with a \
 //                                             population were found."),
         }
@@ -37,7 +37,7 @@ impl StdError for Error {
         match *self {
             Io(ref err) => err.description(),
             AddrParse(ref err) => err.description(),
-            XmlRpcError(ref err) => err.description(),
+            XmlRpcError(ref err) => err,
 //            Another => "not found",
         }
     }
@@ -57,6 +57,6 @@ impl From<AddrParseError> for Error {
 
 impl From<ParseIntError> for Error {
     fn from(err: ParseIntError) -> Error {
-        XmlRpcError(err)
+        XmlRpcError(err.description().to_string())
     }
 }
