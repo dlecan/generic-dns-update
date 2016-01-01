@@ -6,6 +6,9 @@ mod myip;
 // DNS providers
 mod dns;
 
+// Configuration
+mod config;
+
 #[macro_use]
 extern crate clap;
 
@@ -23,6 +26,7 @@ extern crate ip;
 use clap::{Arg, App};
 use std::env;
 
+use config::Config;
 use dns::*;
 use error::Result;
 use myip::*;
@@ -75,7 +79,14 @@ fn main() {
     let force = matches.is_present("force");
     debug!("Force: {}", force);
 
-    match main_with_errors(apikey, domain, record_name, force) {
+    let config = Config {
+        apikey: apikey,
+        domain: domain,
+        record_name: record_name,
+        force: force,
+    };
+
+    match main_with_errors(&config) {
         Ok(_) => info!("Process ends with success"),
         Err(err) => {
             error!("Process failed with result: {}", err);
@@ -84,15 +95,15 @@ fn main() {
     }
 }
 
-fn main_with_errors(apikey: &str, domain: &str, record_name: &str, force: bool) -> Result<()> {
+fn main_with_errors(config: &Config) -> Result<()> {
     // Force Stdin IP provider for now
     let ip_provider = StdinIpProvider;
     let expected_ip_addr = try!(ip_provider.get_my_ip_addr());
 
     // Force Gandi DNS provider for now
-    let mut dns_provider = dns::GandiDNSProvider::new(apikey);
+    let mut dns_provider = dns::GandiDNSProvider::new(config.apikey);
 
-    try!(dns_provider.init(domain));
+    try!(dns_provider.init(config.domain));
 
     match expected_ip_addr {
         ip::IpAddr::V6(_)
@@ -100,20 +111,20 @@ fn main_with_errors(apikey: &str, domain: &str, record_name: &str, force: bool) 
         _ => (),
     }
 
-    let maybe_checked = try!(dns_provider.is_record_already_declared(record_name));
+    let maybe_checked = try!(dns_provider.is_record_already_declared(config.record_name));
 
     match maybe_checked {
         Some(ip_addr) => {
             debug!("Record already declared, with IP address: {}", &ip_addr);
 
-            if !force && (&ip_addr == &expected_ip_addr) {
+            if !config.force && (&ip_addr == &expected_ip_addr) {
                 debug!("IP address not modified, no record to update");
                 Ok(())
             } else {
-                debug!("Update record '{}' with IP address '{}'", record_name, &expected_ip_addr);
-                Ok(try!(dns_provider.update_record(record_name, &expected_ip_addr)))
+                debug!("Update record '{}' with IP address '{}'", config.record_name, &expected_ip_addr);
+                Ok(try!(dns_provider.update_record(config.record_name, &expected_ip_addr)))
             }
         }
-        None => Ok(try!(dns_provider.create_record(record_name, &expected_ip_addr)))
+        None => Ok(try!(dns_provider.create_record(config.record_name, &expected_ip_addr)))
     }
 }
