@@ -65,7 +65,7 @@ fn build_config() -> Config {
 
     // Init logging to DEBUG only if user requires it
     match matches.occurrences_of("verbose") {
-        0 => (),
+        0 => env::set_var("RUST_LOG", "INFO"),
         1 => {
             println!("Verbose mode");
             env::set_var("RUST_LOG", "DEBUG");
