@@ -18,10 +18,9 @@ extern crate env_logger;
 
 extern crate xmlrpc;
 extern crate rustc_serialize;
-
 extern crate regex;
-
 extern crate ip;
+extern crate hyper;
 
 use clap::{Arg, App};
 use std::env;
@@ -54,11 +53,13 @@ fn build_config() -> Config {
             -d --domain=[domain] 'The domain name whose active zonefile will be updated, e.g. \"domain.com\"'
             -n --dry-run 'Dry run, don't really update Gandi zone file'
             -f --force 'Force new zonefile creation even if IP address isn\'t modified'
+            -r --record-name=[record_name] 'Name of the A record to update or create (without domain)'
             [verbose]... -v 'Verbose mode'")
-        .arg(Arg::with_name("record_name")
-            .help("Name of the A record to update or create (without domain)")
-            .index(1)
-            .required(true)
+        .arg(Arg::with_name("ip_provider")
+            .help("IP address provider name to use to get IP address.")
+            .short("i")
+            .long("ip-provider")
+            .takes_value(true)
             .multiple(false))
         .get_matches();
 
@@ -91,18 +92,30 @@ fn build_config() -> Config {
     let force = matches.is_present("force");
     debug!("Force: {}", force);
 
+    let ip_provider = value_t_or_exit!(matches.value_of("ip_provider"), HttpIpProviders);
+    debug!("IP address provider: {:?}", ip_provider);
+
     Config {
         apikey: apikey.to_owned(),
         domain: domain.to_owned(),
         record_name: record_name.to_owned(),
         force: force,
+        ip_provider: ip_provider,
     }
 }
 
 fn main_with_errors(config: &Config) -> Result<()> {
-    // Force Stdin IP provider for now
-    let ip_provider = StdinIpProvider;
+
+    // let ip_provider: MyIPAddressProvider = match config.ip_provider {
+    //     Stdin => StdinIpProvider,
+    //     SfrLaBoxFibre => HttpIpProvider,
+    // };
+
+    let ip_provider = HttpIpProvider;
+
     let expected_ip_addr = try!(ip_provider.get_my_ip_addr());
+
+    debug!("Found IP address: {}", expected_ip_addr);
 
     // Force Gandi DNS provider for now
     let mut dns_provider = dns::GandiDNSProvider::new(&config.apikey);

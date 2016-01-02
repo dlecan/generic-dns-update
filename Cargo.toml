@@ -14,3 +14,4 @@ rust-xmlrpc = { git = "https://github.com/dlecan/rust-xmlrpc.git"}
 rustc-serialize = "0.3"
 regex = "0.1"
 ip = "*"
+hyper = "0.7"
