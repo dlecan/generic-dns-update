@@ -47,7 +47,8 @@ fn build_config() -> Config {
     let matches = App::new("gdu")
         .version(&crate_version!()[..])
         .author("Damien Lecan <dev@dlecan.com>")
-        .about("Gandi DNS updater, useful to reflect your dynamic IP address to your Gandi DNS zone file.\nIP address is read from stdin.")
+        .about("Generic DNS update, useful to update your dynamic IP address into your DNS provider zone file.\n\
+            IP address can be read from several HTTP providers or from stdin.")
         .args_from_usage(
             "-a --apikey=[apikey] 'Your API key provided by Gandi'
             -d --domain=[domain] 'The domain name whose active zonefile will be updated, e.g. \"domain.com\"'
@@ -56,7 +57,11 @@ fn build_config() -> Config {
             -r --record-name=[record_name] 'Name of the A record to update or create (without domain)'
             [verbose]... -v 'Verbose mode'")
         .arg(Arg::with_name("ip_provider")
-            .help("IP address provider name to use to get IP address.")
+            .help("IP address provider to use to get your own IP address.\n                                       \
+                Available values for <ip-provider>:\n                                        \
+                 opendns       : OpenDNS\n                                        \
+                 -             : read IP address from stdin\n                                        \
+                 sfrlaboxfibre : French 'SFR Labox Fibre' subscribers")
             .short("i")
             .long("ip-provider")
             .takes_value(true)
