@@ -1,3 +1,4 @@
+use config::Config;
 use error::Result;
 use error::Error;
 use ip::IpAddr;
@@ -10,30 +11,39 @@ use std::str::FromStr;
 use regex::Regex;
 
 #[derive(Debug)]
-pub enum HttpIpProviders {
+pub enum IpProvider {
     Stdin,
     SfrLaBoxFibre,
 }
 
-impl FromStr for HttpIpProviders {
+impl FromStr for IpProvider {
     type Err = String;
 
-    fn from_str(s: &str) -> StdResult<HttpIpProviders, String> {
+    fn from_str(s: &str) -> StdResult<IpProvider, String> {
         match s {
-            "stdin" => Ok(HttpIpProviders::Stdin),
-            "sfrlaboxfibre" => Ok(HttpIpProviders::SfrLaBoxFibre),
+            "-" => Ok(IpProvider::Stdin),
+            "sfrlaboxfibre" => Ok(IpProvider::SfrLaBoxFibre),
             _ => Err("Unknown value for IP provider".to_owned()),
         }
     }
 }
 
-pub trait IpAddressProvider<'a> {
+pub trait IpAddressProvider {
     fn get_my_ip_addr(&self) -> Result<IpAddr>;
+}
+
+impl IpAddressProvider {
+    pub fn from_config(config: &Config) -> Box<IpAddressProvider + 'static>  {
+        match config.ip_provider {
+            IpProvider::Stdin => Box::new(StdinIpProvider),
+            IpProvider::SfrLaBoxFibre => Box::new(HttpIpProvider),
+        }
+    }
 }
 
 pub struct StdinIpProvider;
 
-impl<'a> IpAddressProvider<'a> for StdinIpProvider {
+impl IpAddressProvider for StdinIpProvider {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         let mut input = String::new();
 
@@ -48,7 +58,7 @@ impl<'a> IpAddressProvider<'a> for StdinIpProvider {
 
 pub struct HttpIpProvider;
 
-impl<'a> IpAddressProvider<'a> for HttpIpProvider {
+impl IpAddressProvider for HttpIpProvider {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         let client = Client::new();
 

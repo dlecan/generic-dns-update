@@ -92,7 +92,7 @@ fn build_config() -> Config {
     let force = matches.is_present("force");
     debug!("Force: {}", force);
 
-    let ip_provider = value_t_or_exit!(matches.value_of("ip_provider"), HttpIpProviders);
+    let ip_provider = value_t_or_exit!(matches.value_of("ip_provider"), IpProvider);
     debug!("IP address provider: {:?}", ip_provider);
 
     Config {
@@ -106,12 +106,7 @@ fn build_config() -> Config {
 
 fn main_with_errors(config: &Config) -> Result<()> {
 
-    // let ip_provider: MyIPAddressProvider = match config.ip_provider {
-    //     Stdin => StdinIpProvider,
-    //     SfrLaBoxFibre => HttpIpProvider,
-    // };
-
-    let ip_provider = HttpIpProvider;
+    let ip_provider = IpAddressProvider::from_config(config);
 
     let expected_ip_addr = try!(ip_provider.get_my_ip_addr());
 
