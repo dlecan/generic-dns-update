@@ -12,11 +12,13 @@ use regex::Regex;
 
 // All HTTP IP providers URL
 static URL_SFR_LABOX_FIBRE: &'static str = "http://192.168.0.1/";
+static URL_OPENDNS: &'static str = "https://diagnostic.opendns.com/myip";
 
 #[derive(Debug)]
 pub enum IpProvider {
     Stdin,
     SfrLaBoxFibre,
+    OpenDNS,
 }
 
 impl FromStr for IpProvider {
@@ -26,6 +28,7 @@ impl FromStr for IpProvider {
         match s {
             "-" => Ok(IpProvider::Stdin),
             "sfrlaboxfibre" => Ok(IpProvider::SfrLaBoxFibre),
+            "opendns" => Ok(IpProvider::OpenDNS),
             value => Err(format!("Unknown value for IP provider: {}", value).to_owned()),
         }
     }
@@ -40,6 +43,7 @@ impl IpAddressProvider {
         match config.ip_provider {
             IpProvider::Stdin => Box::new(StdinIpProvider),
             IpProvider::SfrLaBoxFibre => Box::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE)),
+            IpProvider::OpenDNS => Box::new(HttpIpProvider::new(URL_OPENDNS)),
         }
     }
 }
