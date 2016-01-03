@@ -38,6 +38,19 @@ OPTIONS:
 GDU is available as a native package (rpm/deb) for your distribution through package.io.
 Go to [package.io project page](https://packagecloud.io/dlecan/generic-dns-update/install) for installation instructions.
 
+## Linux cron configuration
+
+You can configure GDU to check hourly if your IP address as been updated with cron.
+
+Edit as root or sudo the file `/etc/cron.hourly/gdu`, with the following content:
+
+```bash
+#!/bin/sh
+
+gdu -a YOUR_GANDI_KEY -d YOUR_DOMAIN -r YOUR_RECORD -i opendns
+
+```
+
 ## Inspiration
 - https://github.com/brianpcurran/gandi-automatic-dns
 - https://github.com/Chralu/gandyn
