@@ -1,6 +1,7 @@
 # GDU | Generic DNS Update [![Build Status](https://travis-ci.org/dlecan/gandi-dns-updater.svg?branch=master)](https://travis-ci.org/dlecan/gandi-dns-updater)
-A tiny cross-platform tool to update Gandi.net zonefiles written in Rust.
+A tiny cross-platform tool to update DNS zonefiles, such as Gandi.net or Go Daddy.
 
+Written in Rust.
 No dependency and simple configuration by command line parameters.
 
 ## Command line usage
@@ -29,6 +30,13 @@ OPTIONS:
     -r, --record-name <record_name>    Name of the A record to update or create (without domain)
 
 ```
+
+## Installation
+
+### On Linux: Fedora, Debian, Ubuntu, Raspbian ...
+
+GDU is available as a native package (rpm/deb) for your distribution through package.io.
+Go to [package.io project page](https://packagecloud.io/dlecan/generic-dns-update/install) for installation instructions.
 
 ## Inspiration
 - https://github.com/brianpcurran/gandi-automatic-dns
