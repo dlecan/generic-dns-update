@@ -1,4 +1,4 @@
-# GDU | Generic DNS Update [![Build Status](https://travis-ci.org/dlecan/gandi-dns-updater.svg?branch=master)](https://travis-ci.org/dlecan/gandi-dns-updater)
+# GDU | Generic DNS Update [![Build Status](https://travis-ci.org/dlecan/generic-dns-update.svg?branch=master)](https://travis-ci.org/dlecan/generic-dns-update)
 A tiny cross-platform tool to update DNS zonefiles, such as Gandi.net or Go Daddy.
 
 Written in Rust.
