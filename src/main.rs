@@ -47,8 +47,9 @@ fn build_config() -> Config {
     let matches = App::new("gdu")
         .version(&crate_version!()[..])
         .author("Damien Lecan <dev@dlecan.com>")
-        .about("Generic DNS update, useful to update your dynamic IP address into your DNS provider zone file.\n\
-            IP address can be read from several HTTP providers or from stdin.")
+        .about("Generic DNS update, useful to update your dynamic IP address into your DNS provider zone file, e.g. Gandi or Go Daddy.\n\
+            IP address can be read from several HTTP providers or from stdin.\n\
+            Only Gandi DNS provider is implemented in this version.")
         .args_from_usage(
             "-a --apikey=[apikey] 'Your API key provided by Gandi'
             -d --domain=[domain] 'The domain name whose active zonefile will be updated, e.g. \"domain.com\"'
