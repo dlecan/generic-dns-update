@@ -108,16 +108,16 @@ fn main_with_errors(config: &Config) -> Result<()> {
 
     let ip_provider = IpAddressProvider::from_config(config);
 
-    let expected_ip_addr = try!(ip_provider.get_my_ip_addr());
+    let my_ip = try!(ip_provider.get_my_ip_addr());
 
-    debug!("Found IP address: {}", expected_ip_addr);
+    info!("My IP address: {}", my_ip);
 
     // Force Gandi DNS provider for now
     let mut dns_provider = dns::GandiDNSProvider::new(&config.apikey);
 
     try!(dns_provider.init(&config.domain));
 
-    match expected_ip_addr {
+    match my_ip {
         ip::IpAddr::V6(_)
             if !dns_provider.handle_ipv6_addr() => panic!("You cannot use IP v6 addresses with the selected DNS provider"),
         _ => (),
@@ -129,14 +129,14 @@ fn main_with_errors(config: &Config) -> Result<()> {
         Some(ip_addr) => {
             debug!("Record already declared, with IP address: {}", &ip_addr);
 
-            if !config.force && (&ip_addr == &expected_ip_addr) {
+            if !config.force && (&ip_addr == &my_ip) {
                 debug!("IP address not modified, no record to update");
                 Ok(())
             } else {
-                debug!("Update record '{}' with IP address '{}'", &config.record_name, &expected_ip_addr);
-                Ok(try!(dns_provider.update_record(&config.record_name, &expected_ip_addr)))
+                debug!("Update record '{}' with IP address '{}'", &config.record_name, &my_ip);
+                Ok(try!(dns_provider.update_record(&config.record_name, &my_ip)))
             }
         }
-        None => Ok(try!(dns_provider.create_record(&config.record_name, &expected_ip_addr)))
+        None => Ok(try!(dns_provider.create_record(&config.record_name, &my_ip)))
     }
 }
