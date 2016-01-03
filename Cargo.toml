@@ -1,5 +1,5 @@
 [package]
-name = "gandi-dns-updater"
+name = "generic-dns-update"
 version = "1.0.0"
 authors = ["Damien Lecan <dev@dlecan.com>"]
 
