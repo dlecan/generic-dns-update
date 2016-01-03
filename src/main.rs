@@ -130,10 +130,10 @@ fn main_with_errors(config: &Config) -> Result<()> {
             debug!("Record already declared, with IP address: {}", &ip_addr);
 
             if !config.force && (&ip_addr == &my_ip) {
-                debug!("IP address not modified, no record to update");
+                info!("IP address not modified, no record to update");
                 Ok(())
             } else {
-                debug!("Update record '{}' with IP address '{}'", &config.record_name, &my_ip);
+                info!("Update record '{}' with IP address '{}'", &config.record_name, &my_ip);
                 Ok(try!(dns_provider.update_record(&config.record_name, &my_ip)))
             }
         }
