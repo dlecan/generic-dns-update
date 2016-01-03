@@ -10,6 +10,9 @@ use std::result::Result as StdResult;
 use std::str::FromStr;
 use regex::Regex;
 
+// All HTTP IP providers URL
+static URL_SFR_LABOX_FIBRE: &'static str = "http://192.168.0.1/";
+
 #[derive(Debug)]
 pub enum IpProvider {
     Stdin,
@@ -36,7 +39,7 @@ impl IpAddressProvider {
     pub fn from_config(config: &Config) -> Box<IpAddressProvider + 'static>  {
         match config.ip_provider {
             IpProvider::Stdin => Box::new(StdinIpProvider),
-            IpProvider::SfrLaBoxFibre => Box::new(HttpIpProvider),
+            IpProvider::SfrLaBoxFibre => Box::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE)),
         }
     }
 }
@@ -56,13 +59,23 @@ impl IpAddressProvider for StdinIpProvider {
     }
 }
 
-pub struct HttpIpProvider;
+pub struct HttpIpProvider<'a> {
+    url: &'a str,
+}
 
-impl IpAddressProvider for HttpIpProvider {
+impl<'a> HttpIpProvider<'a> {
+    fn new(url: &'a str) -> HttpIpProvider {
+        HttpIpProvider {
+            url: url,
+        }
+    }
+}
+
+impl<'a> IpAddressProvider for HttpIpProvider<'a> {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         let client = Client::new();
 
-        let mut res = try!(client.get("http://192.168.0.1/")
+        let mut res = try!(client.get(self.url)
             .header(Connection::close())
             .send());
 
