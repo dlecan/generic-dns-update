@@ -23,7 +23,7 @@ impl FromStr for IpProvider {
         match s {
             "-" => Ok(IpProvider::Stdin),
             "sfrlaboxfibre" => Ok(IpProvider::SfrLaBoxFibre),
-            _ => Err("Unknown value for IP provider".to_owned()),
+            value => Err(format!("Unknown value for IP provider: {}", value).to_owned()),
         }
     }
 }
