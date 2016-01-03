@@ -1,6 +1,6 @@
 [package]
 name = "gandi-dns-updater"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Damien Lecan <dev@dlecan.com>"]
 
 [[bin]]
