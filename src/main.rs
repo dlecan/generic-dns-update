@@ -28,7 +28,8 @@ use std::env;
 use config::Config;
 use dns::*;
 use error::Result;
-use myip::*;
+use myip::GetMyIpAddr;
+use myip::IpProvider;
 use std::process;
 
 fn main() {
@@ -112,9 +113,7 @@ fn build_config() -> Config {
 
 fn main_with_errors(config: &Config) -> Result<()> {
 
-    let ip_provider = IpAddressProvider::from_config(config);
-
-    let my_ip = try!(ip_provider.get_my_ip_addr());
+    let my_ip = try!(config.ip_provider.get_my_ip_addr());
 
     info!("My IP address: {}", my_ip);
 

@@ -1,4 +1,3 @@
-use config::Config;
 use error::Result;
 use error::Error;
 use ip::IpAddr;
@@ -21,6 +20,20 @@ pub enum IpProvider {
     OpenDNS,
 }
 
+pub trait GetMyIpAddr {
+    fn get_my_ip_addr(&self) -> Result<IpAddr>;
+}
+
+impl IpProvider {
+    fn build(&self) -> Box<GetMyIpAddr>  {
+        match self {
+            &IpProvider::Stdin => Box::new(StdinIpProvider),
+            &IpProvider::SfrLaBoxFibre => Box::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE)),
+            &IpProvider::OpenDNS => Box::new(HttpIpProvider::new(URL_OPENDNS)),
+        }
+    }
+}
+
 impl FromStr for IpProvider {
     type Err = String;
 
@@ -34,23 +47,19 @@ impl FromStr for IpProvider {
     }
 }
 
-pub trait IpAddressProvider {
-    fn get_my_ip_addr(&self) -> Result<IpAddr>;
-}
-
-impl IpAddressProvider {
-    pub fn from_config(config: &Config) -> Box<IpAddressProvider + 'static>  {
-        match config.ip_provider {
-            IpProvider::Stdin => Box::new(StdinIpProvider),
-            IpProvider::SfrLaBoxFibre => Box::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE)),
-            IpProvider::OpenDNS => Box::new(HttpIpProvider::new(URL_OPENDNS)),
-        }
+impl GetMyIpAddr for IpProvider {
+    fn get_my_ip_addr(&self) -> Result<IpAddr> {
+        self.build().get_my_ip_addr()
     }
 }
 
-pub struct StdinIpProvider;
+//
+// stdin
+//
 
-impl IpAddressProvider for StdinIpProvider {
+struct StdinIpProvider;
+
+impl GetMyIpAddr for StdinIpProvider {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         let mut input = String::new();
 
@@ -63,7 +72,11 @@ impl IpAddressProvider for StdinIpProvider {
     }
 }
 
-pub struct HttpIpProvider<'a> {
+//
+// http
+//
+
+struct HttpIpProvider<'a> {
     url: &'a str,
 }
 
@@ -75,7 +88,7 @@ impl<'a> HttpIpProvider<'a> {
     }
 }
 
-impl<'a> IpAddressProvider for HttpIpProvider<'a> {
+impl<'a> GetMyIpAddr for HttpIpProvider<'a> {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         let client = Client::new();
 
