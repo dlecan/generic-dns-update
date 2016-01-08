@@ -72,19 +72,9 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>> {
 
-        let response = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &ZONE_VERSION_LATEST);
+        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &ZONE_VERSION_LATEST);
 
-        // Extract already configured IP address
-        // We are looking for something like that: <value><string>55.32.210.10</string></value>
-        let regex = Regex::new(r"<value><string>([0-9.]*)</string></value>").unwrap();
-
-        let caps = regex.captures(&*response.body);
-
-        let result = caps.map_or(None, |caps| caps.at(1))
-            .map(|val| IpAddr::from_str(val).unwrap());
-
-        // TODO: handle correctly regex error
-        Ok(result)
+        Ok(zone.clone().map(|zone| IpAddr::from_str(&zone.ip_addr).unwrap()))
     }
 
     fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()> {
@@ -95,20 +85,16 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         debug!("New zone version: {}", new_zone_version);
 
-        // Extract new record id
+        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &new_zone_version).unwrap();
 
-        let new_record_id = &self.gandi_rpc
-                                 .get_record_id(record_name, &self.zone_id, &new_zone_version);
-
-        debug!("New record id: {}", new_record_id);
+        debug!("New zone: {:?}", zone);
 
         // Update zone with the new record
-
         &self.gandi_rpc.domain_zone_record_update(record_name,
                                                 ip_addr,
                                                 &self.zone_id,
                                                 new_zone_version,
-                                                new_record_id);
+                                                &zone.record_id);
 
         // Activate the new zone
         debug!("Activate version '{}' of the zone '{}'",
@@ -140,9 +126,16 @@ impl GandiRpcEndpoint {
     }
 }
 
+#[derive(Debug)]
 struct GandiRPC<'a> {
     xmlrpc_server: &'a str,
     apikey: &'a str,
+}
+
+#[derive(Debug, Clone)]
+struct Zone {
+    ip_addr: String,
+    record_id: u32,
 }
 
 impl<'a> GandiRPC<'a> {
@@ -153,7 +146,7 @@ impl<'a> GandiRPC<'a> {
         (client, request)
     }
 
-    fn domain_info(&self, domain: &'a str) -> XMLRPCResponse {
+    fn domain_info(&self, domain: &str) -> XMLRPCResponse {
         let (client, mut request) = self.get_gandi_client("domain.info");
         request = request.argument(&domain.to_string());
         request = request.finalize();
@@ -165,7 +158,7 @@ impl<'a> GandiRPC<'a> {
                        record_name: &str,
                        zone_id: &u32,
                        zone_version: &u16)
-                       -> XMLRPCResponse {
+                       -> Option<Zone> {
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.list");
         request = request.argument(zone_id);
@@ -189,7 +182,30 @@ impl<'a> GandiRPC<'a> {
         // Horrible hack, because 'type' is a reserved keyword ...
         request.body = request.body.replace("type_", "type");
 
-        client.remote_call(&request).unwrap()
+        let body = client.remote_call(&request).unwrap().body;
+
+        // IP address
+        let regex = Regex::new(r"<value><string>([0-9.]*)</string></value>").unwrap();
+
+        let caps = regex.captures(&body);
+
+        let maybe_ip_addr = caps.map_or(None, |caps| caps.at(1));
+
+        // record_id
+        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
+
+        let caps = regex.captures(&body).unwrap();
+
+        let maybe_record_id = caps.at(1).map(|val| val.parse::<u32>().ok().unwrap());
+
+        maybe_ip_addr.and_then(|ip| {
+            maybe_record_id.map(|id| {
+                Zone {
+                    ip_addr: ip.to_string(),
+                    record_id: id,
+                }
+            })
+        })
     }
 
     fn domain_zone_version_new(&self, zone_id: &u32) -> u16 {
@@ -204,16 +220,6 @@ impl<'a> GandiRPC<'a> {
         let caps = regex.captures(&*response.body).unwrap();
 
         caps.at(1).unwrap().parse::<u16>().ok().unwrap()
-    }
-
-    fn get_record_id(&self, record_name: &str, zone_id: &u32, zone_version: &u16) -> u32 {
-        let response = &self.domain_zone_record_list(record_name, zone_id, zone_version);
-
-        let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
-
-        let caps = regex.captures(&*response.body).unwrap();
-
-        caps.at(1).unwrap().parse::<u32>().ok().unwrap()
     }
 
     fn domain_zone_record_update(&self,
