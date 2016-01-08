@@ -1,8 +1,25 @@
 # GDU | Generic DNS Update [![Build Status](https://travis-ci.org/dlecan/generic-dns-update.svg?branch=master)](https://travis-ci.org/dlecan/generic-dns-update)
-A tiny cross-platform tool to update DNS zonefiles, such as Gandi.net or Go Daddy.
+A tiny cross-platform tool to update DNS zonefiles (such as Gandi.net) when you have a dymanic IP address.
 
-Written in Rust.
-No dependency and simple configuration by command line parameters.
+It's a DynDNS or equivalent alternative, is available for several OS and has a simple configuration by command line parameters.
+
+For developpers, it's written in Rust and can be easily extended to add new DNS providers or new methods to detect your public IP address.
+
+## Features
+
+- [x] Detect your public IP address
+  - [x] By HTTP
+  - [] By DNS lookup
+
+- Create or update your DNS provider zonefiles to associate to public IP address with an A or AAAA DNS record.
+  - [x] Gandi.net
+  - [] Other providers
+
+- Run on several OS:
+  - [x] Linux x86_64
+  - [x] Linux ARMv6 and more, such as Raspberry PI all models, including PI2
+  - [x] Windows 32/64 bits
+  - [] OS X
 
 ## Command line usage
 
@@ -44,7 +61,7 @@ Then
 sudo apt-get install generic-dns-update
 ```
 
-## Linux cron configuration
+#### Linux cron configuration
 
 You can configure GDU to check hourly if your IP address as been updated with cron.
 
