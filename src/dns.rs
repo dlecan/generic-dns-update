@@ -6,8 +6,6 @@ use xmlrpc::Client as XMLRPCClient;
 use xmlrpc::Request as XMLRPCRequest;
 use xmlrpc::Response as XMLRPCResponse;
 
-const GANDI_URL_PROD: &'static str = "https://rpc.gandi.net/xmlrpc/";
-
 pub trait DNSProvider {
     fn init(&mut self, domain: &str) -> Result<()>;
     fn handle_ipv6_addr(&self) -> bool;
@@ -25,7 +23,7 @@ impl<'a> GandiDNSProvider<'a> {
     pub fn new(gandi_apikey: &'a str) -> GandiDNSProvider<'a> {
 
         let gandi_rpc = GandiRPC {
-            xmlrpc_server: GANDI_URL_PROD,
+            xmlrpc_server: GandiRpcEndpoint::PROD.url(),
             apikey: gandi_apikey,
         };
 
@@ -113,6 +111,21 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn create_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()> {
         unimplemented!();
+    }
+}
+
+#[derive(Debug)]
+pub enum GandiRpcEndpoint {
+    PROD,
+    STAGING,
+}
+
+impl GandiRpcEndpoint {
+    pub fn url(&self) -> &'static str {
+        match self {
+            &GandiRpcEndpoint::PROD => "https://rpc.gandi.net/xmlrpc/",
+            &GandiRpcEndpoint::STAGING => unimplemented!(),
+        }
     }
 }
 
