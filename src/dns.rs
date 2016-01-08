@@ -46,7 +46,7 @@ impl<'a> GandiDNSProvider<'a> {
 impl<'a> DNSProvider for GandiDNSProvider<'a> {
     fn init(&mut self, domain: &str) -> Result<()> {
 
-        let response = &self.gandi_rpc.get_domain_info(domain);
+        let response = &self.gandi_rpc.domain_info(domain);
 
         // TODO: fix this ugly code
         // Handle errors
@@ -70,7 +70,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>> {
 
-        let response = &self.gandi_rpc.get_record_list(record_name, &self.zone_id, &0);
+        let response = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &0);
 
         // Extract already configured IP address
         // We are looking for something like that: <value><string>55.32.210.10</string></value>
@@ -89,7 +89,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         // Create a new zone and get returned version
 
-        let new_zone_version = &self.gandi_rpc.create_new_zone(&self.zone_id);
+        let new_zone_version = &self.gandi_rpc.domain_zone_version_new(&self.zone_id);
 
         debug!("New zone version: {}", new_zone_version);
 
@@ -102,7 +102,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         // Update zone with the new record
 
-        &self.gandi_rpc.update_zone_with_record(record_name,
+        &self.gandi_rpc.domain_zone_record_update(record_name,
                                                 ip_addr,
                                                 &self.zone_id,
                                                 new_zone_version,
@@ -113,7 +113,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
                new_zone_version,
                &self.zone_id);
 
-        self.gandi_rpc.update_zone_version(&self.zone_id, &new_zone_version);
+        self.gandi_rpc.domain_zone_version_set(&self.zone_id, &new_zone_version);
         // TODO: check previous result
         Ok(())
     }
@@ -151,7 +151,7 @@ impl<'a> GandiRPC<'a> {
         (client, request)
     }
 
-    fn get_domain_info(&self, domain: &'a str) -> XMLRPCResponse {
+    fn domain_info(&self, domain: &'a str) -> XMLRPCResponse {
         let (client, mut request) = self.get_gandi_client("domain.info");
         request = request.argument(&domain.to_string());
         request = request.finalize();
@@ -159,7 +159,7 @@ impl<'a> GandiRPC<'a> {
         client.remote_call(&request).unwrap()
     }
 
-    fn get_record_list(&self,
+    fn domain_zone_record_list(&self,
                        record_name: &str,
                        zone_id: &u32,
                        zone_version: &u16)
@@ -190,7 +190,7 @@ impl<'a> GandiRPC<'a> {
         client.remote_call(&request).unwrap()
     }
 
-    fn create_new_zone(&self, zone_id: &u32) -> u16 {
+    fn domain_zone_version_new(&self, zone_id: &u32) -> u16 {
         let (client, mut request) = self.get_gandi_client("domain.zone.version.new");
         request = request.argument(zone_id);
         request = request.finalize();
@@ -205,7 +205,7 @@ impl<'a> GandiRPC<'a> {
     }
 
     fn get_record_id(&self, record_name: &str, zone_id: &u32, zone_version: &u16) -> u32 {
-        let response = &self.get_record_list(record_name, zone_id, zone_version);
+        let response = &self.domain_zone_record_list(record_name, zone_id, zone_version);
 
         let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
 
@@ -214,7 +214,7 @@ impl<'a> GandiRPC<'a> {
         caps.at(1).unwrap().parse::<u32>().ok().unwrap()
     }
 
-    fn update_zone_with_record(&self,
+    fn domain_zone_record_update(&self,
                                record_name: &str,
                                ip_addr: &IpAddr,
                                zone_id: &u32,
@@ -253,7 +253,7 @@ impl<'a> GandiRPC<'a> {
         client.remote_call(&request); // ignore response
     }
 
-    fn update_zone_version(&self, zone_id: &u32, zone_version: &u16) -> bool {
+    fn domain_zone_version_set(&self, zone_id: &u32, zone_version: &u16) -> bool {
 
         let (client, mut request) = self.get_gandi_client("domain.zone.version.set");
         request = request.argument(zone_id);
