@@ -26,7 +26,8 @@ use clap::{Arg, App};
 use std::env;
 
 use config::Config;
-use dns::*;
+use dns::DNSProvider;
+use dns::DNSProviderFactory;
 use error::Result;
 use myip::GetMyIpAddr;
 use myip::IpProvider;
@@ -118,7 +119,7 @@ fn main_with_errors(config: &Config) -> Result<()> {
     info!("My IP address: {}", my_ip);
 
     // Force Gandi DNS provider for now
-    let mut dns_provider = dns::GandiDNSProvider::new(&config.apikey);
+    let mut dns_provider = dns::DNSProviderFactory::build(config);
 
     try!(dns_provider.init(&config.domain));
 

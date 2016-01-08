@@ -1,3 +1,4 @@
+use config::Config;
 use error::Result;
 use ip::IpAddr;
 use regex::Regex;
@@ -5,6 +6,14 @@ use std::str::FromStr;
 use xmlrpc::Client as XMLRPCClient;
 use xmlrpc::Request as XMLRPCRequest;
 use xmlrpc::Response as XMLRPCResponse;
+
+pub struct DNSProviderFactory;
+
+impl<'a> DNSProviderFactory {
+    pub fn build(config: &'a Config) -> Box<DNSProvider + 'a>  {
+        Box::new(GandiDNSProvider::new(&config.apikey))
+    }
+}
 
 pub trait DNSProvider {
     fn init(&mut self, domain: &str) -> Result<()>;
