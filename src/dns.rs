@@ -43,6 +43,8 @@ impl<'a> GandiDNSProvider<'a> {
     }
 }
 
+static ZONE_VERSION_LATEST: u16 = 0;
+
 impl<'a> DNSProvider for GandiDNSProvider<'a> {
     fn init(&mut self, domain: &str) -> Result<()> {
 
@@ -70,7 +72,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>> {
 
-        let response = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &0);
+        let response = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &ZONE_VERSION_LATEST);
 
         // Extract already configured IP address
         // We are looking for something like that: <value><string>55.32.210.10</string></value>
