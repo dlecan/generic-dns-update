@@ -30,6 +30,11 @@ addons:
   apt_packages:
   - rpm
 
+cache:
+  directories:
+    - .cargo
+    - target
+
 before_script:
   - export DEPLOYMENT_ENV=$ARCH-$TRAVIS_RUST_VERSION
 
