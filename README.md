@@ -9,17 +9,17 @@ For developpers, it's written in Rust and can be easily extended to add new DNS 
 
 - [x] Detect your public IP address
   - [x] By HTTP
-  - [] By DNS lookup
+  - [ ] By DNS lookup
 
 - Create or update your DNS provider zonefiles to associate to public IP address with an A or AAAA DNS record.
   - [x] Gandi.net
-  - [] Other providers
+  - [ ] Other providers
 
 - Run on several OS:
   - [x] Linux x86_64
   - [x] Linux ARMv6 and more, such as Raspberry PI all models, including PI2
   - [x] Windows 32/64 bits
-  - [] OS X
+  - [ ] OS X
 
 ## Command line usage
 
