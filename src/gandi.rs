@@ -19,6 +19,20 @@ impl GandiRpcEndpoint {
     }
 }
 
+pub enum ZoneVersion {
+    LATEST,
+    ANOTHER(u16),
+}
+
+impl ZoneVersion {
+    fn to_number(&self) -> u16 {
+        match self {
+            &ZoneVersion::LATEST => 0,
+            &ZoneVersion::ANOTHER(val) => val,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct GandiRPC<'a> {
     pub xmlrpc_server: &'a str,
@@ -50,12 +64,12 @@ impl<'a> GandiRPC<'a> {
     pub fn domain_zone_record_list(&self,
                        record_name: &str,
                        zone_id: &u32,
-                       zone_version: &u16)
+                       zone_version: ZoneVersion)
                        -> Option<Zone> {
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.list");
         request = request.argument(zone_id);
-        request = request.argument(zone_version);
+        request = request.argument(&zone_version.to_number());
 
         #[derive(Debug,RustcEncodable,RustcDecodable)]
         struct Record {

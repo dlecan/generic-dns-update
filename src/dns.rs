@@ -40,8 +40,6 @@ impl<'a> GandiDNSProvider<'a> {
     }
 }
 
-static ZONE_VERSION_LATEST: u16 = 0;
-
 impl<'a> DNSProvider for GandiDNSProvider<'a> {
     fn init(&mut self, domain: &str) -> Result<()> {
 
@@ -69,7 +67,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>> {
 
-        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &ZONE_VERSION_LATEST);
+        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, ZoneVersion::LATEST);
 
         Ok(zone.clone().map(|zone| IpAddr::from_str(&zone.ip_addr).unwrap()))
     }
@@ -82,7 +80,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         debug!("New zone version: {}", new_zone_version);
 
-        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, &new_zone_version).unwrap();
+        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, ZoneVersion::ANOTHER(*new_zone_version)).unwrap();
 
         debug!("New zone: {:?}", zone);
 
