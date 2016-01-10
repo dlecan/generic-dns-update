@@ -1,7 +1,9 @@
 use config::Config;
 use error::Result;
 use ip::IpAddr;
-use gandi::*;
+use gandi::GandiRPC;
+use gandi::GandiRpcEndpoint;
+use gandi::ZoneVersion;
 use std::str::FromStr;
 
 pub struct DNSProviderFactory;
