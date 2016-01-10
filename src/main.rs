@@ -118,16 +118,15 @@ fn main_with_errors(config: &Config) -> Result<()> {
 
     info!("My IP address: {}", my_ip);
 
-    // Force Gandi DNS provider for now
     let mut dns_provider = dns::DNSProviderFactory::build(config);
-
-    try!(dns_provider.init(&config.domain));
 
     match my_ip {
         ip::IpAddr::V6(_)
             if !dns_provider.handle_ipv6_addr() => panic!("You cannot use IP v6 addresses with the selected DNS provider"),
         _ => (),
     }
+
+    try!(dns_provider.init(&config.domain));
 
     let maybe_checked = try!(dns_provider.is_record_already_declared(&config.record_name));
 
