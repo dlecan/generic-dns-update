@@ -9,6 +9,8 @@ mod dns;
 // Configuration
 mod config;
 
+mod gandi;
+
 #[macro_use]
 extern crate clap;
 
