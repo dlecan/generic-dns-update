@@ -35,8 +35,8 @@ impl ZoneVersion {
 
 #[derive(Debug)]
 pub struct GandiRPC<'a> {
-    pub xmlrpc_server: &'a str,
-    pub apikey: &'a str,
+    xmlrpc_server: &'a str,
+    apikey: &'a str,
 }
 
 #[derive(Debug, Clone)]
@@ -46,6 +46,14 @@ pub struct Zone {
 }
 
 impl<'a> GandiRPC<'a> {
+
+    pub fn new(endpoint: GandiRpcEndpoint, apikey: &'a str) -> GandiRPC {
+        GandiRPC {
+            xmlrpc_server: endpoint.url(),
+            apikey: apikey,
+        }
+    }
+
     fn get_gandi_client(&self, rpc_action: &str) -> (XMLRPCClient, XMLRPCRequest) {
         let client = XMLRPCClient::new(self.xmlrpc_server);
         let mut request = XMLRPCRequest::new(rpc_action);

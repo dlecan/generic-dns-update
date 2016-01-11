@@ -69,10 +69,7 @@ pub struct GandiDNSProvider<'a> {
 impl<'a> GandiDNSProvider<'a> {
     pub fn new(gandi_apikey: &'a str) -> GandiDNSProvider<'a> {
 
-        let gandi_rpc = GandiRPC {
-            xmlrpc_server: GandiRpcEndpoint::PROD.url(),
-            apikey: gandi_apikey,
-        };
+        let gandi_rpc = GandiRPC::new(GandiRpcEndpoint::PROD, gandi_apikey);
 
         GandiDNSProvider {
             zone_id: Default::default(),
