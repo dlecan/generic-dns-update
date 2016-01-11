@@ -75,7 +75,7 @@ impl<'a> GandiDNSProvider<'a> {
         };
 
         GandiDNSProvider {
-            zone_id: 0,
+            zone_id: Default::default(),
             gandi_rpc: gandi_rpc,
         }
     }
