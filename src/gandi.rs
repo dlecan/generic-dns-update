@@ -63,6 +63,7 @@ impl<'a> GandiRPC<'a> {
 
     pub fn domain_zone_record_list(&self,
                        record_name: &str,
+                       record_type: &str,
                        zone_id: &u32,
                        zone_version: ZoneVersion)
                        -> Option<Zone> {
@@ -79,7 +80,7 @@ impl<'a> GandiRPC<'a> {
 
         let record = Record {
             name: record_name.to_string(),
-            type_: "A".to_string(),
+            type_: record_type.to_string(),
         };
 
         request = request.argument(&record);

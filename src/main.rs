@@ -30,6 +30,7 @@ use std::env;
 use config::Config;
 use dns::DNSProvider;
 use dns::DNSProviderFactory;
+use dns::Record;
 use error::Result;
 use myip::GetMyIpAddr;
 use myip::IpProvider;
@@ -128,9 +129,11 @@ fn main_with_errors(config: &Config) -> Result<()> {
         _ => (),
     }
 
+    let record = Record::new(&config.record_name, &my_ip);
+
     try!(dns_provider.init(&config.domain));
 
-    let maybe_checked = try!(dns_provider.is_record_already_declared(&config.record_name));
+    let maybe_checked = try!(dns_provider.is_record_already_declared(&record));
 
     match maybe_checked {
         Some(ip_addr) => {
@@ -140,10 +143,10 @@ fn main_with_errors(config: &Config) -> Result<()> {
                 info!("IP address not modified, no record to update");
                 Ok(())
             } else {
-                info!("Update record '{}' with IP address '{}'", &config.record_name, &my_ip);
-                Ok(try!(dns_provider.update_record(&config.record_name, &my_ip)))
+                info!("Update record '{:?}' with IP address '{}'", &record, &my_ip);
+                Ok(try!(dns_provider.update_record(&record, &my_ip)))
             }
         }
-        None => Ok(try!(dns_provider.create_record(&config.record_name, &my_ip)))
+        None => Ok(try!(dns_provider.create_record(&record, &my_ip)))
     }
 }

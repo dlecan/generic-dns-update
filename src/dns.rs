@@ -14,12 +14,51 @@ impl<'a> DNSProviderFactory {
     }
 }
 
+#[derive(Debug)]
+pub struct Record<'a> {
+    pub name: &'a str,
+    pub type_: RecordType,
+}
+
+impl<'a> Record<'a> {
+    pub fn new(record_name: &'a str, ip_addr: &IpAddr) -> Record<'a> {
+        let record_type = RecordType::from_ipaddr(&ip_addr);
+
+        Record {
+            name: record_name,
+            type_: record_type,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum RecordType {
+    A,
+    AAAA,
+}
+
+impl RecordType {
+    pub fn to_string(&self) -> String {
+        match self {
+            &RecordType::A => "A".to_string(),
+            &RecordType::AAAA => "AAAA".to_string(),
+        }
+    }
+
+    pub fn from_ipaddr(ip_addr: &IpAddr) -> RecordType {
+        match ip_addr {
+            &IpAddr::V4(_) => RecordType::A,
+            &IpAddr::V6(_) => RecordType::AAAA,
+        }
+    }
+}
+
 pub trait DNSProvider {
     fn init(&mut self, domain: &str) -> Result<()>;
     fn handle_ipv6_addr(&self) -> bool;
-    fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>>;
-    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()>;
-    fn create_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()>;
+    fn is_record_already_declared(&self, record: &Record) -> Result<Option<IpAddr>>;
+    fn update_record(&self, record: &Record, ip_addr: &IpAddr) -> Result<()>;
+    fn create_record(&self, record: &Record, ip_addr: &IpAddr) -> Result<()>;
 }
 
 pub struct GandiDNSProvider<'a> {
@@ -64,17 +103,17 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
     fn handle_ipv6_addr(&self) -> bool {
         // IPv6 addresses are not handled yet
-        false
+        true
     }
 
-    fn is_record_already_declared(&self, record_name: &str) -> Result<Option<IpAddr>> {
+    fn is_record_already_declared(&self, record: &Record) -> Result<Option<IpAddr>> {
 
-        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, ZoneVersion::LATEST);
+        let zone = &self.gandi_rpc.domain_zone_record_list(&record.name, &record.type_.to_string(), &self.zone_id, ZoneVersion::LATEST);
 
         Ok(zone.clone().map(|zone| IpAddr::from_str(&zone.ip_addr).unwrap()))
     }
 
-    fn update_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()> {
+    fn update_record(&self, record: &Record, ip_addr: &IpAddr) -> Result<()> {
 
         // Create a new zone and get returned version
 
@@ -82,12 +121,12 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         debug!("New zone version: {}", new_zone_version);
 
-        let zone = &self.gandi_rpc.domain_zone_record_list(record_name, &self.zone_id, ZoneVersion::ANOTHER(*new_zone_version)).unwrap();
+        let zone = &self.gandi_rpc.domain_zone_record_list(&record.name, &record.type_.to_string(), &self.zone_id, ZoneVersion::ANOTHER(*new_zone_version)).unwrap();
 
         debug!("New zone: {:?}", zone);
 
         // Update zone with the new record
-        &self.gandi_rpc.domain_zone_record_update(record_name,
+        &self.gandi_rpc.domain_zone_record_update(&record.name,
                                                 ip_addr,
                                                 &self.zone_id,
                                                 new_zone_version,
@@ -103,7 +142,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         Ok(())
     }
 
-    fn create_record(&self, record_name: &str, ip_addr: &IpAddr) -> Result<()> {
+    fn create_record(&self, _record: &Record, _ip_addr: &IpAddr) -> Result<()> {
         unimplemented!();
     }
 }
