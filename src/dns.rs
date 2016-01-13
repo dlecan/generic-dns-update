@@ -142,7 +142,26 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
         Ok(())
     }
 
-    fn create_record(&self, _record: &Record, _ip_addr: &IpAddr) -> Result<()> {
-        unimplemented!();
+    fn create_record(&self, record: &Record, ip_addr: &IpAddr) -> Result<()> {
+        // Create a new zone and get returned version
+
+        let new_zone_version = &self.gandi_rpc.domain_zone_version_new(&self.zone_id);
+
+        debug!("New zone version: {}", new_zone_version);
+
+        // Create the new record for the new zone version
+        &self.gandi_rpc.domain_zone_record_add(&record.name,
+                                                ip_addr,
+                                                &self.zone_id,
+                                                new_zone_version);
+
+        // Activate the new zone
+        debug!("Activate version '{}' of the zone '{}'",
+               new_zone_version,
+               &self.zone_id);
+
+        self.gandi_rpc.domain_zone_version_set(&self.zone_id, &new_zone_version);
+        // TODO: check previous result
+        Ok(())
     }
 }

@@ -192,4 +192,36 @@ impl<'a> GandiRPC<'a> {
         }
 
     }
+
+    pub fn domain_zone_record_add(&self,
+                               record_name: &str,
+                               ip_addr: &IpAddr,
+                               zone_id: &u32,
+                               zone_version: &u16) {
+        let (client, mut request) = self.get_gandi_client("domain.zone.record.add");
+        request = request.argument(zone_id);
+        request = request.argument(zone_version);
+
+        #[derive(Debug,RustcEncodable,RustcDecodable)]
+        struct Record {
+            name: String,
+            type_: String,
+            value: String,
+        }
+
+        let record = Record {
+            name: record_name.to_string(),
+            type_: "A".to_string(),
+            value: ip_addr.to_string(),
+        };
+
+        request = request.argument(&record);
+
+        request = request.finalize();
+
+        // Horrible hack, because 'type' is a reserved keyword ...
+        request.body = request.body.replace("type_", "type");
+
+        client.remote_call(&request); // ignore response
+    }
 }
