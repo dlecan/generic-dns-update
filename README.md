@@ -70,7 +70,7 @@ Edit as root or sudo the file `/etc/cron.hourly/gdu`, with the following content
 ```bash
 #!/bin/bash
 
-gdu -a YOUR_GANDI_KEY -d YOUR_DOMAIN -r YOUR_RECORD -i opendns
+gdu -a YOUR_GANDI_KEY -d YOUR_DOMAIN -r YOUR_RECORD -i opendns >> /var/log/gdu.log 2>&1
 
 ```
 
