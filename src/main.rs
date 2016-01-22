@@ -53,6 +53,7 @@ fn build_config() -> Config {
         .version(&crate_version!()[..])
         .author("Damien Lecan <dev@dlecan.com>")
         .about("Generic DNS update, useful to update your dynamic IP address into your DNS provider zone file, e.g. Gandi or Go Daddy.\n\
+            GDU detects if your ip address is IPv4 or v6 and and will create a record with type 'A' or 'AAAA' accordingly.\n\n\
             IP address can be read from several HTTP providers or from stdin.\n\
             Only Gandi DNS provider is implemented in this version.")
         .args_from_usage(
@@ -60,7 +61,7 @@ fn build_config() -> Config {
             -d --domain=[domain] 'The domain name whose active zonefile will be updated, e.g. \"domain.com\"'
             -n --dry-run 'Dry run, don't really update Gandi zone file'
             -f --force 'Force new zonefile creation even if IP address isn\'t modified'
-            -r --record-name=[record_name] 'Name of the A record to update or create (without domain)'
+            -r --record-name=[record_name] 'Name of the A or AAAA record to update or create (without domain)'
             [verbose]... -v 'Verbose mode'")
         .arg(Arg::with_name("ip_provider")
             .help("IP address provider to use to get your own IP address.\n                                       \
