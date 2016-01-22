@@ -104,10 +104,12 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
     }
 
     fn is_record_already_declared(&self, record: &Record) -> Result<Option<IpAddr>> {
-
         let zone = &self.gandi_rpc.domain_zone_record_list(&record.name, &record.type_.to_string(), &self.zone_id, ZoneVersion::LATEST);
 
-        Ok(zone.clone().map(|zone| IpAddr::from_str(&zone.ip_addr).unwrap()))
+        match zone.clone() {
+            None => Ok(None),
+            Some(zone) => Ok(Some(try!(IpAddr::from_str(&zone.ip_addr))))
+        }
     }
 
     fn update_record(&self, record: &Record, ip_addr: &IpAddr) -> Result<()> {

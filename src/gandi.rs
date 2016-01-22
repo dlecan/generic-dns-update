@@ -110,9 +110,11 @@ impl<'a> GandiRPC<'a> {
         // record_id
         let regex = Regex::new(r"<int>([0-9]+)</int>").unwrap();
 
-        let caps = regex.captures(&body).unwrap();
+        let caps = regex.captures(&body);
 
-        let maybe_record_id = caps.at(1).map(|val| val.parse::<u32>().ok().unwrap());
+        let maybe_record_id = caps
+            .map_or(None, |caps| caps.at(1))
+            .map(|val| val.parse::<u32>().ok().unwrap());
 
         maybe_ip_addr.and_then(|ip| {
             maybe_record_id.map(|id| {
