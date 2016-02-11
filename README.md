@@ -1,9 +1,9 @@
 # GDU | Generic DNS Update [![Build Status](https://travis-ci.org/dlecan/generic-dns-update.svg?branch=master)](https://travis-ci.org/dlecan/generic-dns-update)
-A tiny cross-platform tool to update DNS zonefiles (such as Gandi.net) when you have a public dynamic IP address.
+A cross-platform tool to update DNS zonefiles (such as Gandi.net) when you have a dynamic public IP address.
 
-It's a DynDNS or equivalent alternative, is available for several OS and has a simple configuration by command line parameters.
+It's a DynDNS or equivalent alternative, available for several OS and configured by command line parameters.
 
-For developpers, it's written in Rust and can be easily extended to add new DNS providers or new methods to detect your public IP address.
+For developpers, it's written in Rust and can be easily extended to add new DNS providers or new ways to detect your public IP address.
 
 ## Features
 
