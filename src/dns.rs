@@ -1,6 +1,6 @@
 use config::Config;
 use error::Result;
-use ip::IpAddr;
+use std::net::IpAddr;
 use gandi::GandiRPC;
 use gandi::GandiRpcEndpoint;
 use gandi::ZoneVersion;

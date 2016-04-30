@@ -1,6 +1,6 @@
 use error::Result;
 use error::Error;
-use ip::IpAddr;
+use std::net::IpAddr;
 use hyper::Client;
 use hyper::header::Connection;
 use std::io;

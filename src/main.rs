@@ -21,7 +21,6 @@ extern crate env_logger;
 extern crate xmlrpc;
 extern crate rustc_serialize;
 extern crate regex;
-extern crate ip;
 extern crate hyper;
 
 use clap::{Arg, App};
@@ -125,7 +124,7 @@ fn main_with_errors(config: &Config) -> Result<()> {
     let mut dns_provider = dns::DNSProviderFactory::build(config);
 
     match my_ip {
-        ip::IpAddr::V6(_)
+        std::net::IpAddr::V6(_)
             if !dns_provider.handle_ipv6_addr() => panic!("You cannot use IP v6 addresses with the selected DNS provider"),
         _ => (),
     }

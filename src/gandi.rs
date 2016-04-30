@@ -1,4 +1,4 @@
-use ip::IpAddr;
+use std::net::IpAddr;
 use regex::Regex;
 use xmlrpc::Client as XMLRPCClient;
 use xmlrpc::Request as XMLRPCRequest;
