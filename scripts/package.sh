@@ -66,7 +66,7 @@ else
       -v $(pwd):/source \
       -v ~/.cargo/git:/root/.cargo/git \
       -v ~/.cargo/registry:/root/.cargo/registry \
-      dlecan/rust-crosscompiler-armv6:stable \
+      dlecan/rust-crosscompiler-arm:stable \
       cargo build --release
 
     fpm \
