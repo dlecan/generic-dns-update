@@ -9,7 +9,7 @@ name="gdu"
 [dependencies]
 clap = "1"
 log = "0.3"
-env_logger = "*"
+env_logger = "0.3"
 rust-xmlrpc = { git = "https://github.com/dlecan/rust-xmlrpc.git"}
 rustc-serialize = "0.3"
 regex = "0.1"
