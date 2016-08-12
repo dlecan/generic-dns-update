@@ -15,7 +15,6 @@ matrix:
 
   allow_failures:
   - rust: nightly
-  - env: ARCH=armv6
 
   exclude:
   - rust: beta
