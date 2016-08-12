@@ -15,3 +15,6 @@ rustc-serialize = "0.3"
 regex = "0.1"
 hyper = "0"
 time = "0.1"
+
+[package.metadata.release]
+upload-doc = false
