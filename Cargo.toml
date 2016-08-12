@@ -7,7 +7,7 @@ authors = ["Damien Lecan <dev@dlecan.com>"]
 name="gdu"
 
 [dependencies]
-clap = "1"
+clap = "2"
 log = "0.3"
 env_logger = "0.3"
 rust-xmlrpc = { git = "https://github.com/dlecan/rust-xmlrpc.git"}
