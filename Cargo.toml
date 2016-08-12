@@ -13,4 +13,4 @@ env_logger = "*"
 rust-xmlrpc = { git = "https://github.com/dlecan/rust-xmlrpc.git"}
 rustc-serialize = "0.3"
 regex = "0.1"
-hyper = "0.7"
+hyper = "0"
