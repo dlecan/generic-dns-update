@@ -1,8 +1,8 @@
 use std::net::IpAddr;
 use regex::Regex;
-use xmlrpc::Client as XMLRPCClient;
-use xmlrpc::Request as XMLRPCRequest;
-use xmlrpc::Response as XMLRPCResponse;
+use xmlrpc::client::Client as XMLRPCClient;
+use xmlrpc::protocol::Request as XMLRPCRequest;
+use xmlrpc::protocol::Response as XMLRPCResponse;
 
 #[derive(Debug)]
 pub enum GandiRpcEndpoint {

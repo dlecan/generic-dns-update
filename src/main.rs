@@ -11,6 +11,8 @@ mod config;
 
 mod gandi;
 
+mod xmlrpc;
+
 #[macro_use]
 extern crate clap;
 
@@ -18,12 +20,13 @@ extern crate clap;
 extern crate log;
 extern crate env_logger;
 
-extern crate xmlrpc;
 extern crate rustc_serialize;
 extern crate regex;
 extern crate hyper;
 
 extern crate time;
+
+extern crate xml;
 
 use clap::{Arg, App};
 use config::Config;
