@@ -23,14 +23,16 @@ extern crate rustc_serialize;
 extern crate regex;
 extern crate hyper;
 
-use clap::{Arg, App};
-use std::env;
+extern crate time;
 
+use clap::{Arg, App};
 use config::Config;
 use dns::DNSProvider;
 use dns::DNSProviderFactory;
 use dns::Record;
+use env_logger::LogBuilder;
 use error::Result;
+use log::{LogRecord, LogLevelFilter};
 use myip::GetMyIpAddr;
 use myip::IpProvider;
 use std::process;
@@ -74,20 +76,35 @@ fn build_config() -> Config {
             .multiple(false))
         .get_matches();
 
+    // Init logger
+    let format = |record: &LogRecord| {
+        let t = time::now();
+        format!("{},{:03} - {} - {}",
+            time::strftime("%Y-%m-%d %H:%M:%S", &t).unwrap(),
+            t.tm_nsec / 1000_000,
+            record.level(),
+            record.args()
+        )
+    };
+
     // Init logging to DEBUG only if user requires it
-    match matches.occurrences_of("verbose") {
-        0 => env::set_var("RUST_LOG", "INFO"),
+    let log_level_filter = match matches.occurrences_of("verbose") {
+        0 => LogLevelFilter::Info,
         1 => {
             println!("Verbose mode");
-            env::set_var("RUST_LOG", "DEBUG");
+            LogLevelFilter::Debug
         }
         2 | _=> {
             println!("More verbose mode");
-            env::set_var("RUST_LOG", "TRACE");
+            LogLevelFilter::Trace
         }
-    }
-    env_logger::init().unwrap();
+    };
 
+    let mut builder = LogBuilder::new();
+    builder.format(format).filter(None, log_level_filter);
+    builder.init().unwrap();
+
+    // Read parameters
     let apikey = matches.value_of("apikey").unwrap();
     debug!("Using apikey: {}", apikey);
 
