@@ -20,16 +20,16 @@ pub enum IpProvider {
     OpenDNS,
 }
 
-pub trait GetMyIpAddr {
-    fn get_my_ip_addr(&self) -> Result<IpAddr>;
+pub trait GetMyIpAddr<T> {
+    fn get_my_ip_addr(&self) -> Result<T>;
 }
 
 impl IpProvider {
-    fn build(&self) -> Box<GetMyIpAddr>  {
+    fn build(&self) -> Box<GetMyIpAddr<IpAddr>>  {
         match self {
             &IpProvider::Stdin => Box::new(StdinIpProvider),
-            &IpProvider::SfrLaBoxFibre => Box::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE)),
-            &IpProvider::OpenDNS => Box::new(HttpIpProvider::new(URL_OPENDNS)),
+            &IpProvider::SfrLaBoxFibre => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE))),
+            &IpProvider::OpenDNS => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_OPENDNS))),
         }
     }
 }
@@ -47,7 +47,7 @@ impl FromStr for IpProvider {
     }
 }
 
-impl GetMyIpAddr for IpProvider {
+impl GetMyIpAddr<IpAddr> for IpProvider {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         self.build().get_my_ip_addr()
     }
@@ -59,7 +59,7 @@ impl GetMyIpAddr for IpProvider {
 
 struct StdinIpProvider;
 
-impl GetMyIpAddr for StdinIpProvider {
+impl GetMyIpAddr<IpAddr> for StdinIpProvider {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         let mut input = String::new();
 
@@ -88,8 +88,8 @@ impl<'a> HttpIpProvider<'a> {
     }
 }
 
-impl<'a> GetMyIpAddr for HttpIpProvider<'a> {
-    fn get_my_ip_addr(&self) -> Result<IpAddr> {
+impl<'a> GetMyIpAddr<String> for HttpIpProvider<'a> {
+    fn get_my_ip_addr(&self) -> Result<String> {
         let client = Client::new();
 
         let mut res = try!(client.get(self.url)
@@ -101,6 +101,26 @@ impl<'a> GetMyIpAddr for HttpIpProvider<'a> {
 
         trace!("HTTP Response: {}", body);
 
+        Ok(body)
+    }
+}
+
+pub struct FromRegexIpProvider<P: GetMyIpAddr<String>> {
+    provider: P,
+}
+
+impl<'a, P: GetMyIpAddr<String>> FromRegexIpProvider<P> {
+    fn new(provider: P) -> FromRegexIpProvider<P> {
+        FromRegexIpProvider {
+            provider: provider,
+        }
+    }
+}
+
+impl<P: GetMyIpAddr<String>> GetMyIpAddr<IpAddr> for FromRegexIpProvider<P> {
+    fn get_my_ip_addr(&self) -> Result<IpAddr> {
+        let body = self.provider.get_my_ip_addr().unwrap();
+
         let regex = try!(Regex::new(r"((?:(?:0|1[\d]{0,2}|2(?:[0-4]\d?|5[0-5]?|[6-9])?|[3-9]\d?)\.){3}(?:0|1[\d]{0,2}|2(?:[0-4]\d?|5[0-5]?|[6-9])?|[3-9]\d?))"));
 
         regex.captures(&*body)
@@ -111,5 +131,31 @@ impl<'a> GetMyIpAddr for HttpIpProvider<'a> {
                 error!("IP parse error: {}", e);
                 Error::IpNotFound
             }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use error::Result;
+    use std::net::IpAddr;
+    use std::str::FromStr;
+
+    static IP_V4: &'static str = "100.3.5.4";
+
+    struct IPv4BodyHP;
+
+    impl GetMyIpAddr<String> for IPv4BodyHP {
+        fn get_my_ip_addr(&self) -> Result<String> {
+            Ok(IP_V4.to_owned())
+        }
+    }
+
+    #[test]
+    fn ipv4_addr() {
+        let mockHP = IPv4BodyHP;
+        let provider = FromRegexIpProvider::new(mockHP);
+        let maybeResult = provider.get_my_ip_addr();
+        assert_eq!(IpAddr::from_str(IP_V4).unwrap(), maybeResult.unwrap());
     }
 }
