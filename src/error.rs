@@ -36,7 +36,7 @@ impl fmt::Display for Error {
             XmlRpc(ref label) => f.write_str(label),
             Http(ref err) => err.fmt(f),
             Regex(ref err) => err.fmt(f),
-            IpNotFound => write!(f, "IP address not found."),
+            IpNotFound => write!(f, "IP address not found in input stream."),
 //            Another => write!(f, "No matching cities with a \
 //                                             population were found."),
         }

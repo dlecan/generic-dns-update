@@ -121,10 +121,17 @@ impl<P: GetMyIpAddr<String>> GetMyIpAddr<IpAddr> for FromRegexIpProvider<P> {
     fn get_my_ip_addr(&self) -> Result<IpAddr> {
         let body = self.provider.get_my_ip_addr().unwrap();
 
-        let regex = try!(Regex::new(r"((?:(?:0|1[\d]{0,2}|2(?:[0-4]\d?|5[0-5]?|[6-9])?|[3-9]\d?)\.){3}(?:0|1[\d]{0,2}|2(?:[0-4]\d?|5[0-5]?|[6-9])?|[3-9]\d?))"));
+        let ipv4_regex = try!(Regex::new(r"((?:(?:0|1[\d]{0,2}|2(?:[0-4]\d?|5[0-5]?|[6-9])?|[3-9]\d?)\.){3}(?:0|1[\d]{0,2}|2(?:[0-4]\d?|5[0-5]?|[6-9])?|[3-9]\d?))"));
+        let ipv6_regex = try!(Regex::new(r"((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d)\.){3}(\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d))|(([0-9A-Fa-f]{1,4}:){0,5}:((\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d)\.){3}(\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d))|(::([0-9A-Fa-f]{1,4}:){0,5}((\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d)\.){3}(\d((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\d))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))"));
 
-        regex.captures(&*body)
-            .and_then(|caps| caps.at(1))
+        let maybe_ipv4 = ipv4_regex.captures(&*body)
+            .and_then(|caps| caps.at(1));
+
+
+        let maybe_ipv6 = ipv6_regex.captures(&*body)
+            .and_then(|caps| caps.at(1));
+
+        maybe_ipv4.or(maybe_ipv6)
             // Convert Option to Result
             .ok_or(Error::IpNotFound)
             .and_then(|val| IpAddr::from_str(val).map_err(|e| {
@@ -137,11 +144,13 @@ impl<P: GetMyIpAddr<String>> GetMyIpAddr<IpAddr> for FromRegexIpProvider<P> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use error::Error;
     use error::Result;
     use std::net::IpAddr;
     use std::str::FromStr;
 
     static IP_V4: &'static str = "100.3.5.4";
+    static IP_V6: &'static str = "2a01:ca07:835a:3210:2cdb:dd10:101d:3117";
 
     struct IPv4BodyHP;
 
@@ -153,9 +162,39 @@ mod tests {
 
     #[test]
     fn ipv4_addr() {
-        let mockHP = IPv4BodyHP;
-        let provider = FromRegexIpProvider::new(mockHP);
+        let provider = FromRegexIpProvider::new(IPv4BodyHP);
         let maybeResult = provider.get_my_ip_addr();
         assert_eq!(IpAddr::from_str(IP_V4).unwrap(), maybeResult.unwrap());
     }
+
+    struct IPv6BodyHP;
+
+    impl GetMyIpAddr<String> for IPv6BodyHP {
+        fn get_my_ip_addr(&self) -> Result<String> {
+            Ok(IP_V6.to_owned())
+        }
+    }
+
+    #[test]
+    fn ipv6_addr() {
+        let provider = FromRegexIpProvider::new(IPv6BodyHP);
+        let maybeResult = provider.get_my_ip_addr();
+        assert_eq!(IpAddr::from_str(IP_V6).unwrap(), maybeResult.unwrap());
+    }
+
+    struct NotIPAddrBodyHP;
+
+    impl GetMyIpAddr<String> for NotIPAddrBodyHP {
+        fn get_my_ip_addr(&self) -> Result<String> {
+            Ok("not an ip addr".to_owned())
+        }
+    }
+
+    #[test]
+    fn not_an_ip_addr() {
+        let provider = FromRegexIpProvider::new(NotIPAddrBodyHP);
+        let maybeResult = provider.get_my_ip_addr();
+        assert!(maybeResult.is_err());
+    }
+
 }
