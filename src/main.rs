@@ -115,7 +115,7 @@ fn build_config() -> Config {
     let domain = matches.value_of("domain").unwrap();
     debug!("Using domain: {}", domain);
 
-    let record_name = matches.value_of("record_name").unwrap();
+    let record_name = matches.value_of("record-name").unwrap();
     debug!("Using record name: {}", record_name);
 
     let dry_run = matches.is_present("dry-run");
