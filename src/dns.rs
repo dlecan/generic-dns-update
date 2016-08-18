@@ -125,6 +125,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         // Update zone with the new record
         &self.gandi_rpc.domain_zone_record_update(&record.name,
+                                                &record.type_.to_string(),
                                                 ip_addr,
                                                 &self.zone_id,
                                                 new_zone_version,
@@ -149,6 +150,7 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         // Create the new record for the new zone version
         &self.gandi_rpc.domain_zone_record_add(&record.name,
+                                                &record.type_.to_string(),
                                                 ip_addr,
                                                 &self.zone_id,
                                                 new_zone_version);

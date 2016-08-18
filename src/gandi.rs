@@ -150,12 +150,13 @@ impl<'a> GandiRPC<'a> {
 
     pub fn domain_zone_record_update(&self,
                                record_name: &str,
+                               record_type: &str,
                                ip_addr: &IpAddr,
                                zone_id: &u32,
                                zone_version: &u16,
                                new_record_id: &u32) {
 
-        trace!("domain_zone_record_update - record_name: {:?} - ip_addr: {:?} - zone_id: {:?} - zone_version: {:?} - new_record_id: {:?}", record_name, ip_addr, zone_id, zone_version, new_record_id);
+        trace!("domain_zone_record_update - record_name: {:?} - record_type: {:?} - ip_addr: {:?} - zone_id: {:?} - zone_version: {:?} - new_record_id: {:?}", record_name, record_type, ip_addr, zone_id, zone_version, new_record_id);
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
         request = request.argument(zone_id);
@@ -176,7 +177,7 @@ impl<'a> GandiRPC<'a> {
 
         let record = Record {
             name: record_name.to_string(),
-            type_: "A".to_string(),
+            type_: record_type.to_string(),
             value: ip_addr.to_string(),
         };
 
@@ -218,11 +219,12 @@ impl<'a> GandiRPC<'a> {
 
     pub fn domain_zone_record_add(&self,
                                record_name: &str,
+                               record_type: &str,
                                ip_addr: &IpAddr,
                                zone_id: &u32,
                                zone_version: &u16) {
 
-        trace!("domain_zone_record_add - record_name: {:?} - ip_addr: {:?} - zone_id: {:?} - zone_version: {:?}", record_name, ip_addr, zone_id, zone_version);
+        trace!("domain_zone_record_add - record_name: {:?} - record_type: {:?} - ip_addr: {:?} - zone_id: {:?} - zone_version: {:?}", record_name, record_type, ip_addr, zone_id, zone_version);
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.add");
         request = request.argument(zone_id);
@@ -237,7 +239,7 @@ impl<'a> GandiRPC<'a> {
 
         let record = Record {
             name: record_name.to_string(),
-            type_: "A".to_string(),
+            type_: record_type.to_string(),
             value: ip_addr.to_string(),
         };
 
