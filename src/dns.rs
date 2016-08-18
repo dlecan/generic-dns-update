@@ -99,7 +99,6 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
     }
 
     fn handle_ipv6_addr(&self) -> bool {
-        // IPv6 addresses are not handled yet
         true
     }
 
