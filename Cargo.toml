@@ -1,6 +1,6 @@
 [package]
 name = "generic-dns-update"
-version = "1.1.2-pre"
+version = "1.1.2"
 authors = ["Damien Lecan <dev@dlecan.com>"]
 description = "A cross-platform tool to update DNS zonefiles (such as Gandi.net) when you have a dynamic public IP address."
 homepage = "https://github.com/dlecan/generic-dns-update/"
