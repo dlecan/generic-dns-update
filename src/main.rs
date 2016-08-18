@@ -140,7 +140,7 @@ fn main_with_errors(config: &Config) -> Result<()> {
 
     let my_ip = try!(config.ip_provider.get_my_ip_addr());
 
-    info!("My IP address: {}", my_ip);
+    info!("My IP address: {:?}", my_ip);
 
     let mut dns_provider = dns::DNSProviderFactory::build(config);
 
@@ -164,7 +164,7 @@ fn main_with_errors(config: &Config) -> Result<()> {
                 info!("IP address not modified, no record to update");
                 Ok(())
             } else {
-                info!("Update record '{:?}' with IP address '{}'", &record, &my_ip);
+                info!("Update record '{:?}' with IP address '{:?}'", &record, &my_ip);
                 Ok(try!(dns_provider.update_record(&record, &my_ip)))
             }
         }

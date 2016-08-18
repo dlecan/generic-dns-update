@@ -19,6 +19,7 @@ impl GandiRpcEndpoint {
     }
 }
 
+#[derive(Debug)]
 pub enum ZoneVersion {
     LATEST,
     ANOTHER(u16),
@@ -62,6 +63,8 @@ impl<'a> GandiRPC<'a> {
     }
 
     pub fn domain_info(&self, domain: &str) -> XMLRPCResponse {
+        trace!("domain_info - domain: {:?}", domain);
+
         let (client, mut request) = self.get_gandi_client("domain.info");
         request = request.argument(&domain.to_string());
         request = request.finalize();
@@ -75,6 +78,8 @@ impl<'a> GandiRPC<'a> {
                        zone_id: &u32,
                        zone_version: ZoneVersion)
                        -> Option<Zone> {
+
+        trace!("domain_zone_record_list - record_name: {:?} - record_type: {:?} - zone_id: {:?} - zone_version: {:?}", record_name, record_type, zone_id, zone_version);
 
         let (client, mut request) = self.get_gandi_client("domain.zone.record.list");
         request = request.argument(zone_id);
@@ -127,6 +132,9 @@ impl<'a> GandiRPC<'a> {
     }
 
     pub fn domain_zone_version_new(&self, zone_id: &u32) -> u16 {
+
+        trace!("domain_zone_version_new - zone_id: {:?}", zone_id);
+
         let (client, mut request) = self.get_gandi_client("domain.zone.version.new");
         request = request.argument(zone_id);
         request = request.finalize();
@@ -146,6 +154,9 @@ impl<'a> GandiRPC<'a> {
                                zone_id: &u32,
                                zone_version: &u16,
                                new_record_id: &u32) {
+
+        trace!("domain_zone_record_update - record_name: {:?} - ip_addr: {:?} - zone_id: {:?} - zone_version: {:?} - new_record_id: {:?}", record_name, ip_addr, zone_id, zone_version, new_record_id);
+
         let (client, mut request) = self.get_gandi_client("domain.zone.record.update");
         request = request.argument(zone_id);
         request = request.argument(zone_version);
@@ -181,6 +192,8 @@ impl<'a> GandiRPC<'a> {
 
     pub fn domain_zone_version_set(&self, zone_id: &u32, zone_version: &u16) -> bool {
 
+        trace!("domain_zone_version_set - zone_id: {:?} - zone_version: {:?}", zone_id, zone_version);
+
         let (client, mut request) = self.get_gandi_client("domain.zone.version.set");
         request = request.argument(zone_id);
         request = request.argument(zone_version);
@@ -208,6 +221,9 @@ impl<'a> GandiRPC<'a> {
                                ip_addr: &IpAddr,
                                zone_id: &u32,
                                zone_version: &u16) {
+
+        trace!("domain_zone_record_add - record_name: {:?} - ip_addr: {:?} - zone_id: {:?} - zone_version: {:?}", record_name, ip_addr, zone_id, zone_version);
+
         let (client, mut request) = self.get_gandi_client("domain.zone.record.add");
         request = request.argument(zone_id);
         request = request.argument(zone_version);
