@@ -70,9 +70,10 @@ fn build_config() -> Config {
         .arg(Arg::with_name("ip_provider")
             .help("IP address provider to use to get your own IP address.\n                                       \
                 Available values for <ip-provider>:\n                                        \
-                 opendns       : OpenDNS\n                                        \
+                 ipify         : Ipify (IPv4)\n
+                 opendns       : OpenDNS (IPv6)\n                                        \
                  -             : read IP address from stdin\n                                        \
-                 sfrlaboxfibre : French 'SFR Labox Fibre' subscribers")
+                 sfrlaboxfibre : French 'SFR Labox Fibre' subscribers (IPv4)")
             .short("i")
             .long("ip-provider")
             .takes_value(true)

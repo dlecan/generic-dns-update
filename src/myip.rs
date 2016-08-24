@@ -12,12 +12,14 @@ use regex::Regex;
 // All HTTP IP providers URL
 static URL_SFR_LABOX_FIBRE: &'static str = "http://192.168.0.1/";
 static URL_OPENDNS: &'static str = "https://diagnostic.opendns.com/myip";
+static URL_IPIFY: &'static str = "https://api.ipify.org/";
 
 #[derive(Debug)]
 pub enum IpProvider {
     Stdin,
     SfrLaBoxFibre,
     OpenDNS,
+    Ipify,
 }
 
 pub trait GetMyIpAddr<T> {
@@ -30,6 +32,7 @@ impl IpProvider {
             &IpProvider::Stdin => Box::new(StdinIpProvider),
             &IpProvider::SfrLaBoxFibre => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE))),
             &IpProvider::OpenDNS => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_OPENDNS))),
+            &IpProvider::Ipify => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_IPIFY))),
         }
     }
 }
@@ -42,6 +45,7 @@ impl FromStr for IpProvider {
             "-" => Ok(IpProvider::Stdin),
             "sfrlaboxfibre" => Ok(IpProvider::SfrLaBoxFibre),
             "opendns" => Ok(IpProvider::OpenDNS),
+            "ipify"=> Ok(IpProvider::Ipify),
             value => Err(format!("Unknown value for IP provider: {}", value).to_owned()),
         }
     }
