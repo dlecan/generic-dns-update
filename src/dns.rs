@@ -9,7 +9,7 @@ use std::str::FromStr;
 pub struct DNSProviderFactory;
 
 impl<'a> DNSProviderFactory {
-    pub fn build(config: &'a Config) -> Box<DNSProvider + 'a>  {
+    pub fn build(config: &'a Config) -> Box<DNSProvider + 'a> {
         Box::new(GandiDNSProvider::new(&config.apikey))
     }
 }
@@ -103,11 +103,14 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
     }
 
     fn is_record_already_declared(&self, record: &Record) -> Result<Option<IpAddr>> {
-        let zone = &self.gandi_rpc.domain_zone_record_list(&record.name, &record.type_.to_string(), &self.zone_id, ZoneVersion::LATEST);
+        let zone = &self.gandi_rpc.domain_zone_record_list(&record.name,
+                                                           &record.type_.to_string(),
+                                                           &self.zone_id,
+                                                           ZoneVersion::LATEST);
 
         match zone.clone() {
             None => Ok(None),
-            Some(zone) => Ok(Some(try!(IpAddr::from_str(&zone.ip_addr))))
+            Some(zone) => Ok(Some(try!(IpAddr::from_str(&zone.ip_addr)))),
         }
     }
 
@@ -119,17 +122,22 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         debug!("New zone version: {}", new_zone_version);
 
-        let zone = &self.gandi_rpc.domain_zone_record_list(&record.name, &record.type_.to_string(), &self.zone_id, ZoneVersion::ANOTHER(*new_zone_version)).unwrap();
+        let zone = &self.gandi_rpc
+            .domain_zone_record_list(&record.name,
+                                     &record.type_.to_string(),
+                                     &self.zone_id,
+                                     ZoneVersion::ANOTHER(*new_zone_version))
+            .unwrap();
 
         debug!("New zone: {:?}", zone);
 
         // Update zone with the new record
         &self.gandi_rpc.domain_zone_record_update(&record.name,
-                                                &record.type_.to_string(),
-                                                ip_addr,
-                                                &self.zone_id,
-                                                new_zone_version,
-                                                &zone.record_id);
+                                                  &record.type_.to_string(),
+                                                  ip_addr,
+                                                  &self.zone_id,
+                                                  new_zone_version,
+                                                  &zone.record_id);
 
         // Activate the new zone
         debug!("Activate version '{}' of the zone '{}'",
@@ -150,10 +158,10 @@ impl<'a> DNSProvider for GandiDNSProvider<'a> {
 
         // Create the new record for the new zone version
         &self.gandi_rpc.domain_zone_record_add(&record.name,
-                                                &record.type_.to_string(),
-                                                ip_addr,
-                                                &self.zone_id,
-                                                new_zone_version);
+                                               &record.type_.to_string(),
+                                               ip_addr,
+                                               &self.zone_id,
+                                               new_zone_version);
 
         // Activate the new zone
         debug!("Activate version '{}' of the zone '{}'",

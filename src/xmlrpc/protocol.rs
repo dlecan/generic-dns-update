@@ -8,7 +8,7 @@
 
 // Rust XML-RPC library
 
-use rustc_serialize::{Encodable,Decodable};
+use rustc_serialize::{Encodable, Decodable};
 use xmlrpc::encoding;
 
 #[derive(Debug)]
@@ -29,7 +29,8 @@ impl Request {
             body: format!("\
             <?xml version=\"1.0\"?>\
             <methodCall><methodName>{}</methodName>\
-                <params>", method),
+                <params>",
+                          method),
         }
     }
 
@@ -43,14 +44,11 @@ impl Request {
         self.body = self.body + "</params></methodCall>";
         self
     }
-
 }
 
 impl Response {
     pub fn new(body: &str) -> Response {
-        Response {
-            body: body.to_string(),
-        }
+        Response { body: body.to_string() }
     }
 
     pub fn result<T: Decodable>(&self) -> Result<Vec<T>, encoding::DecoderError> {
@@ -71,7 +69,9 @@ mod tests {
     #[test]
     fn test_encode() {
 
-        let expected = "<?xml version=\"1.0\"?><methodCall><methodName>method_name_value</methodName><params><param><value><string>string_value</string></value></param><param><value><double>4.2</double></value></param><param><value><boolean>1</boolean></value></param></params></methodCall>";
+        let expected = "<?xml version=\"1.\
+                        0\"?><methodCall><methodName>method_name_value</methodName><params><param><value><string>string_value</string></value></param><param><value><double>4.\
+                        2</double></value></param><param><value><boolean>1</boolean></value></param></params></methodCall>";
 
         let mut request = super::Request::new("method_name_value");
         request = request.argument(&"string_value".to_string());
@@ -85,41 +85,58 @@ mod tests {
 
     #[test]
     fn test_decode() {
-      let response = super::Response { body: "<?xml version=\"1.0\" encoding=\"utf-8\"?>
-                                  <methodResponse>
+        let response = super::Response {
+            body: "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+                                  \
+                   <methodResponse>
                                   <params>
-                                   <param>
+                                   \
+                   <param>
                                     <value>
-                                     <struct>
+                                     \
+                   <struct>
                                       <member>
-                                       <name>key1</name>
+                                       \
+                   <name>key1</name>
                                        <value>
-                                        <string>string_value</string>
+                                        \
+                   <string>string_value</string>
                                        </value>
-                                      </member>
+                                      \
+                   </member>
                                       <member>
-                                       <name>key2</name>
+                                       \
+                   <name>key2</name>
                                        <value>
-                                        <double>4.2</double>
+                                        \
+                   <double>4.2</double>
                                        </value>
-                                      </member>
+                                      \
+                   </member>
                                       <member>
-                                       <name>key3</name>
+                                       \
+                   <name>key3</name>
                                        <value>
-                                        <boolean>1</boolean>
+                                        \
+                   <boolean>1</boolean>
                                        </value>
-                                      </member>
+                                      \
+                   </member>
                                      </struct>
-                                    </value>
+                                    \
+                   </value>
                                    </param>
-                                  </params>
-                                  </methodResponse>".into() };
+                                  \
+                   </params>
+                                  </methodResponse>"
+                .into(),
+        };
 
-      let result = &response.result::<TestObject>().ok().unwrap()[0];
-      println!("Decoded result: {:?}", result);
+        let result = &response.result::<TestObject>().ok().unwrap()[0];
+        println!("Decoded result: {:?}", result);
 
-      assert_eq!("string_value".to_string(), result.key1);
-      assert_eq!(4.2, result.key2);
-      assert_eq!(true, result.key3);
+        assert_eq!("string_value".to_string(), result.key1);
+        assert_eq!(4.2, result.key2);
+        assert_eq!(true, result.key3);
     }
 }

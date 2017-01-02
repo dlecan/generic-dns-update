@@ -85,11 +85,10 @@ fn build_config() -> Config {
     let format = |record: &LogRecord| {
         let t = time::now();
         format!("{},{:03} - {} - {}",
-            time::strftime("%Y-%m-%d %H:%M:%S", &t).unwrap(),
-            t.tm_nsec / 1000_000,
-            record.level(),
-            record.args()
-        )
+                time::strftime("%Y-%m-%d %H:%M:%S", &t).unwrap(),
+                t.tm_nsec / 1000_000,
+                record.level(),
+                record.args())
     };
 
     // Init logging to DEBUG only if user requires it
@@ -99,7 +98,7 @@ fn build_config() -> Config {
             println!("Verbose mode");
             LogLevelFilter::Debug
         }
-        2 | _=> {
+        2 | _ => {
             println!("More verbose mode");
             LogLevelFilter::Trace
         }
@@ -146,8 +145,9 @@ fn main_with_errors(config: &Config) -> Result<()> {
     let mut dns_provider = dns::DNSProviderFactory::build(config);
 
     match my_ip {
-        std::net::IpAddr::V6(_)
-            if !dns_provider.handle_ipv6_addr() => panic!("You cannot use IP v6 addresses with the selected DNS provider"),
+        std::net::IpAddr::V6(_) if !dns_provider.handle_ipv6_addr() => {
+            panic!("You cannot use IP v6 addresses with the selected DNS provider")
+        }
         _ => (),
     }
 
@@ -165,10 +165,12 @@ fn main_with_errors(config: &Config) -> Result<()> {
                 info!("IP address not modified, no record to update");
                 Ok(())
             } else {
-                info!("Update record '{:?}' with IP address '{:?}'", &record, &my_ip);
+                info!("Update record '{:?}' with IP address '{:?}'",
+                      &record,
+                      &my_ip);
                 Ok(try!(dns_provider.update_record(&record, &my_ip)))
             }
         }
-        None => Ok(try!(dns_provider.create_record(&record, &my_ip)))
+        None => Ok(try!(dns_provider.create_record(&record, &my_ip))),
     }
 }

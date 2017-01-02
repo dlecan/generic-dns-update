@@ -18,7 +18,7 @@ use self::DecoderError::*;
 use std::collections::{HashMap, BTreeMap};
 use std::error::Error as StdError;
 use std::ops::Index;
-use std::str::{FromStr};
+use std::str::FromStr;
 use std::{io, f64, fmt, str};
 use std::io::BufRead;
 
@@ -35,21 +35,23 @@ extern crate num;
 /// Represents an XML-RPC data value
 #[derive(Clone, PartialEq, PartialOrd, Debug)]
 pub enum Xml {
-     I32(i32),
-     F64(f64),
-     String(String),
-     Boolean(bool),
-     Array(self::Array),
-     Object(self::Object),
-     Base64(Vec<u8>), // FIXME: added for xml-rpc, not in JSON
-     DateTime, // FIXME: need to implement
-     Null,
+    I32(i32),
+    F64(f64),
+    String(String),
+    Boolean(bool),
+    Array(self::Array),
+    Object(self::Object),
+    Base64(Vec<u8>), // FIXME: added for xml-rpc, not in JSON
+    DateTime, // FIXME: need to implement
+    Null,
 }
 
 pub type Array = Vec<Xml>;
 pub type Object = BTreeMap<String, Xml>;
 
-pub struct AsXml<'a, T: 'a> { inner: &'a T }
+pub struct AsXml<'a, T: 'a> {
+    inner: &'a T,
+}
 
 /// The errors that can arise while parsing an XML stream.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -63,13 +65,13 @@ pub enum ErrorCode {
 
 impl fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    	let str1 = match self {
-	        &InvalidSyntax => "invalid syntax",
-	        &EOFWhileParsingObject => "EOF While parsing object",
-	        &EOFWhileParsingArray => "EOF While parsing array",
-	        &EOFWhileParsingValue => "EOF While parsing value",
-	        &EOFWhileParsingString => "EOF While parsing string",
-    	};
+        let str1 = match self {
+            &InvalidSyntax => "invalid syntax",
+            &EOFWhileParsingObject => "EOF While parsing object",
+            &EOFWhileParsingArray => "EOF While parsing array",
+            &EOFWhileParsingValue => "EOF While parsing value",
+            &EOFWhileParsingString => "EOF While parsing string",
+        };
         write!(f, "({})", str1)
     }
 }
@@ -81,12 +83,12 @@ pub enum ParserError {
     IoError(io::ErrorKind, String),
 }
 
-impl fmt::Display for ParserError{
+impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str1 = match self {
-	        &SyntaxError(_,_) => "Syntax Error",
-	        &IoError(_,_) => "I/O Error",
-    	};
+            &SyntaxError(_, _) => "Syntax Error",
+            &IoError(_, _) => "I/O Error",
+        };
         write!(f, "({})", str1)
     }
 }
@@ -98,14 +100,16 @@ impl fmt::Display for ParserError{
 // }
 
 impl StdError for ParserError {
-    fn description(&self) -> &str { "failed to parse xml" }
+    fn description(&self) -> &str {
+        "failed to parse xml"
+    }
     // fn detail(&self) -> Option<std::String> { Some(format!("{:?}", self)) }
-//    fn cause(&self) -> Option<&StdError> {
-//    	match self {
-//    		&IoError(ioerr, _) => ioerr,
-//    		_ => None,
-//    	}
-//    }
+    //    fn cause(&self) -> Option<&StdError> {
+    //    	match self {
+    //    		&IoError(ioerr, _) => ioerr,
+    //    		_ => None,
+    //    	}
+    //    }
 }
 
 // Builder and Parser have the same errors.
@@ -117,18 +121,18 @@ pub enum DecoderError {
     ExpectedError(String, String),
     MissingFieldError(String),
     UnknownVariantError(String),
-    ApplicationError(String)
+    ApplicationError(String),
 }
 
 impl fmt::Display for DecoderError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str1 = match self {
-	        &ParseError(_) => "Parsing Error",
-	        &ExpectedError(_,_) => "EOF While parsing object",
-	        &MissingFieldError(_) => "EOF While parsing array",
-	        &UnknownVariantError(_) => "EOF While parsing value",
-	        &ApplicationError(_) => "EOF While parsing string",
-    	};
+            &ParseError(_) => "Parsing Error",
+            &ExpectedError(_, _) => "EOF While parsing object",
+            &MissingFieldError(_) => "EOF While parsing array",
+            &UnknownVariantError(_) => "EOF While parsing value",
+            &ApplicationError(_) => "EOF While parsing string",
+        };
         write!(f, "({})", str1)
     }
 }
@@ -140,7 +144,9 @@ impl fmt::Display for DecoderError {
 // }
 
 impl StdError for DecoderError {
-    fn description(&self) -> &str { "decoder error" }
+    fn description(&self) -> &str {
+        "decoder error"
+    }
     // fn detail(&self) -> Option<std::String> { Some(format!("{:?}", self)) }
     fn cause(&self) -> Option<&StdError> {
         match *self {
@@ -154,16 +160,16 @@ impl StdError for DecoderError {
 pub fn decode<T: Decodable>(s: &str) -> Result<Vec<T>, DecoderError> {
     let results = match Xml::from_str(s) {
         Ok(xs) => xs,
-        Err(e) => return Err(ParseError(e))
+        Err(e) => return Err(ParseError(e)),
     };
 
     let mut out = Vec::new();
     for result in results {
-      let mut decoder = Decoder::new(result);
-      match Decodable::decode(&mut decoder) {
-        Ok(decoded) => out.push(decoded),
-        Err(error) => return Err(error)
-      }
+        let mut decoder = Decoder::new(result);
+        match Decodable::decode(&mut decoder) {
+            Ok(decoded) => out.push(decoded),
+            Err(error) => return Err(error),
+        }
     }
 
     Ok(out)
@@ -187,7 +193,7 @@ fn escape_str(wr: &mut fmt::Write, v: &str) -> fmt::Result {
 }
 
 fn escape_char(writer: &mut fmt::Write, v: char) -> fmt::Result {
-	// TODO: check hack
+    // TODO: check hack
     let n = v.to_string();
     let buf = unsafe { str::from_utf8_unchecked(n.as_bytes()) };
     escape_str(writer, buf)
@@ -195,7 +201,7 @@ fn escape_char(writer: &mut fmt::Write, v: char) -> fmt::Result {
 
 /// A structure for implementing serialization to XML-RPC.
 pub struct Encoder<'a> {
-    writer: &'a mut (fmt::Write+'a),
+    writer: &'a mut (fmt::Write + 'a),
 }
 
 impl<'a> Encoder<'a> {
@@ -208,22 +214,43 @@ impl<'a> Encoder<'a> {
 
 impl<'a> SerializeEncoder for Encoder<'a> {
     type Error = fmt::Error;
-    fn emit_nil(&mut self) -> EncodeResult { write!(self.writer, "<nil/>") }
+    fn emit_nil(&mut self) -> EncodeResult {
+        write!(self.writer, "<nil/>")
+    }
 
-    fn emit_usize(&mut self, v: usize) -> EncodeResult { self.emit_i32(v as i32) }
-    fn emit_u64(&mut self, v: u64) -> EncodeResult { self.emit_i32(v as i32) }
-    fn emit_u32(&mut self, v: u32) -> EncodeResult { self.emit_i32(v as i32) }
-    fn emit_u16(&mut self, v: u16) -> EncodeResult { self.emit_i32(v as i32) }
-    fn emit_u8(&mut self, v: u8) -> EncodeResult { self.emit_i32(v as i32) }
+    fn emit_usize(&mut self, v: usize) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
+    fn emit_u64(&mut self, v: u64) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
+    fn emit_u32(&mut self, v: u32) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
+    fn emit_u16(&mut self, v: u16) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
+    fn emit_u8(&mut self, v: u8) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
 
-    fn emit_isize(&mut self, v: isize) -> EncodeResult { self.emit_i32(v as i32) }
-    fn emit_i64(&mut self, v: i64) -> EncodeResult { self.emit_i32(v as i32) }
-    fn emit_i32(&mut self, v: i32) -> EncodeResult { // XML-RPC only supports 4-byte signed integer
+    fn emit_isize(&mut self, v: isize) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
+    fn emit_i64(&mut self, v: i64) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
+    fn emit_i32(&mut self, v: i32) -> EncodeResult {
+        // XML-RPC only supports 4-byte signed integer
         // FIXME, precondition numbers to check range
         write!(self.writer, "<value><int>{}</int></value>", v)
     }
-    fn emit_i16(&mut self, v: i16) -> EncodeResult { self.emit_i32(v as i32) }
-    fn emit_i8(&mut self, v: i8) -> EncodeResult { self.emit_i32(v as i32) }
+    fn emit_i16(&mut self, v: i16) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
+    fn emit_i8(&mut self, v: i8) -> EncodeResult {
+        self.emit_i32(v as i32)
+    }
 
     fn emit_bool(&mut self, v: bool) -> EncodeResult {
         write!(self.writer, "<value><boolean>{}</boolean></value>", v as u8)
@@ -232,7 +259,9 @@ impl<'a> SerializeEncoder for Encoder<'a> {
     fn emit_f64(&mut self, v: f64) -> EncodeResult {
         write!(self.writer, "<value><double>{}</double></value>", v)
     }
-    fn emit_f32(&mut self, v: f32) -> EncodeResult { self.emit_f64(v as f64) }
+    fn emit_f32(&mut self, v: f32) -> EncodeResult {
+        self.emit_f64(v as f64)
+    }
 
     fn emit_char(&mut self, v: char) -> EncodeResult {
         try!(write!(self.writer, "<value><string>"));
@@ -241,23 +270,18 @@ impl<'a> SerializeEncoder for Encoder<'a> {
     }
     fn emit_str(&mut self, v: &str) -> EncodeResult {
         try!(write!(self.writer, "<value><string>"));
-	try!(escape_str(self.writer, v));
+        try!(escape_str(self.writer, v));
         write!(self.writer, "</string></value>")
     }
 
-    fn emit_enum<F>(&mut self, _name: &str, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_enum<F>(&mut self, _name: &str, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         f(self)
     }
 
-    fn emit_enum_variant<F>(&mut self,
-                            name: &str,
-                            _id: usize,
-                            cnt: usize,
-                            f: F)
-                            -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_enum_variant<F>(&mut self, name: &str, _id: usize, cnt: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         // enums are encoded as strings or objects
         // Bunny => <string>Bunny</string>
@@ -267,7 +291,7 @@ impl<'a> SerializeEncoder for Encoder<'a> {
         //       <name>variant</name>
         //       <value><string>Kangaroo</string></value>
         //     </member>
- 	//     <member>
+        //     <member>
         //       <name>fields</name>
         //       <value>
         //         <array>
@@ -292,8 +316,8 @@ impl<'a> SerializeEncoder for Encoder<'a> {
     }
 
 
-    fn emit_enum_variant_arg<F>(&mut self, idx: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_enum_variant_arg<F>(&mut self, idx: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         if idx != 0 {
             try!(write!(self.writer, ","));
@@ -305,31 +329,29 @@ impl<'a> SerializeEncoder for Encoder<'a> {
                                    name: &str,
                                    id: usize,
                                    cnt: usize,
-                                   f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+                                   f: F)
+                                   -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         self.emit_enum_variant(name, id, cnt, f)
     }
 
-    fn emit_enum_struct_variant_field<F>(&mut self,
-                                         _: &str,
-                                         idx: usize,
-                                         f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_enum_struct_variant_field<F>(&mut self, _: &str, idx: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         self.emit_enum_variant_arg(idx, f)
     }
 
-    fn emit_struct<F>(&mut self, _: &str, _: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_struct<F>(&mut self, _: &str, _: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         try!(write!(self.writer, "<struct>"));
         try!(f(self));
         write!(self.writer, "</struct>")
     }
 
-    fn emit_struct_field<F>(&mut self, name: &str, idx: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_struct_field<F>(&mut self, name: &str, idx: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         try!(write!(self.writer, "<member>"));
         try!(write!(self.writer, "<name>{}</name>", name)); // FIXME: encode str?
@@ -339,94 +361,95 @@ impl<'a> SerializeEncoder for Encoder<'a> {
         write!(self.writer, "</member>")
     }
 
-    fn emit_tuple<F>(&mut self, len: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_tuple<F>(&mut self, len: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         self.emit_seq(len, f)
     }
-    fn emit_tuple_arg<F>(&mut self, idx: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_tuple_arg<F>(&mut self, idx: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         self.emit_seq_elt(idx, f)
     }
 
-    fn emit_tuple_struct<F>(&mut self, _name: &str, len: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_tuple_struct<F>(&mut self, _name: &str, len: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         self.emit_seq(len, f)
     }
-    fn emit_tuple_struct_arg<F>(&mut self, idx: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_tuple_struct_arg<F>(&mut self, idx: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         self.emit_seq_elt(idx, f)
     }
 
-    fn emit_option<F>(&mut self, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_option<F>(&mut self, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         f(self)
     }
-    fn emit_option_none(&mut self) -> EncodeResult { self.emit_nil() }
-    fn emit_option_some<F>(&mut self, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_option_none(&mut self) -> EncodeResult {
+        self.emit_nil()
+    }
+    fn emit_option_some<F>(&mut self, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         f(self)
     }
 
-    fn emit_seq<F>(&mut self, _len: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_seq<F>(&mut self, _len: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         try!(write!(self.writer, "<array><data>"));
         try!(f(self));
         write!(self.writer, "</data></array>")
     }
 
-    fn emit_seq_elt<F>(&mut self, idx: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_seq_elt<F>(&mut self, idx: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         try!(write!(self.writer, "<value>"));
         try!(f(self));
         write!(self.writer, "</value>")
     }
 
-    fn emit_map<F>(&mut self, _len: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_map<F>(&mut self, _len: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         Ok(())
         // FIXME: this is JSON source
-        //try!(write!(self.writer, "{{"));
-        //try!(f(self));
-        //write!(self.writer, "}}")
+        // try!(write!(self.writer, "{{"));
+        // try!(f(self));
+        // write!(self.writer, "}}")
     }
 
-    //fn emit_map_elt_key<F>(&mut self, idx: usize, mut f: F) -> EncodeResult where
+    // fn emit_map_elt_key<F>(&mut self, idx: usize, mut f: F) -> EncodeResult where
     // FIXME: implement
-    fn emit_map_elt_key<F>(&mut self, idx: usize, f: F) -> EncodeResult// where
-        // F: FnMut(&mut Encoder<'a>) -> EncodeResult,
-    {
-        //if idx != 0 { try!(write!(self.writer, ",")) }
-        //// ref #12967, make sure to wrap a key in double quotes,
-        //// in the event that its of a type that omits them (eg numbers)
-        //let mut buf = Vec::new();
+    fn emit_map_elt_key<F>(&mut self, idx: usize, f: F) -> EncodeResult { // where
+        // F: FnMut(&mut Encoder<'a>) -> EncodeResult, {
+        // if idx != 0 { try!(write!(self.writer, ",")) }
+        // / ref #12967, make sure to wrap a key in double quotes,
+        // / in the event that its of a type that omits them (eg numbers)
+        // let mut buf = Vec::new();
         // // FIXME(14302) remove the transmute and unsafe block.
-        //unsafe {
+        // unsafe {
         //    let mut check_encoder = Encoder::new(&mut buf);
         //    try!(f(transmute(&mut check_encoder)));
-        //}
-        //let out = str::from_utf8(buf[]).unwrap();
-        //let needs_wrapping = out.char_at(0) != '"' && out.char_at_reverse(out.len()) != '"';
-        //if needs_wrapping { try!(write!(self.writer, "" }
-        //try!(f(self));
-        //if needs_wrapping { try!(write!(self.writer, "" }
+        //
+        // let out = str::from_utf8(buf[]).unwrap();
+        // let needs_wrapping = out.char_at(0) != '"' && out.char_at_reverse(out.len()) != '"';
+        // if needs_wrapping { try!(write!(self.writer, "" }
+        // try!(f(self));
+        // if needs_wrapping { try!(write!(self.writer, "" }
         Ok(())
     }
 
-    fn emit_map_elt_val<F>(&mut self, _idx: usize, f: F) -> EncodeResult where
-        F: FnOnce(&mut Encoder<'a>) -> EncodeResult,
+    fn emit_map_elt_val<F>(&mut self, _idx: usize, f: F) -> EncodeResult
+        where F: FnOnce(&mut Encoder<'a>) -> EncodeResult
     {
         Ok(())
-        //try!(write!(self.writer, ":"));
-        //f(self)
+        // try!(write!(self.writer, ":"));
+        // f(self)
     }
 }
 
@@ -439,7 +462,7 @@ impl Encodable for Xml {
             Xml::Boolean(v) => v.encode(e),
             Xml::Array(ref v) => v.encode(e),
             Xml::Object(ref v) => v.encode(e), // FIXME: had to add hardcoded
-                                               // impl for BTreeMap
+            // impl for BTreeMap
             Xml::Null => e.emit_nil(),
             _ => Ok(()), // FIXME: add other types
         }
@@ -454,10 +477,9 @@ pub fn as_xml<T: Encodable>(t: &T) -> AsXml<T> {
 
 
 impl Xml {
-
     pub fn from_str(s: &str) -> Result<Vec<Self>, BuilderError> {
-        //let mut builder = Builder::new(s.chars());
-        //builder.build()
+        // let mut builder = Builder::new(s.chars());
+        // builder.build()
         let cur = io::Cursor::new(s.as_bytes());
         let mut builder = Builder::new(cur);
         builder.build()
@@ -466,28 +488,33 @@ impl Xml {
     // FIXME: this should give us a method to build objects from an existing xml parser
     // such as for interpreting xml requests
     pub fn from_parser<B: BufRead>(p: xml::EventReader<B>) -> Result<Vec<Self>, BuilderError> {
-        let mut builder = Builder { parser: p, token: None };
+        let mut builder = Builder {
+            parser: p,
+            token: None,
+        };
         builder.build()
     }
 
     /// If the XML value is an Object, returns the value associated with the provided key.
     /// Otherwise, returns None.
-    pub fn find<'a>(&'a self, key: &str) -> Option<&'a Xml>{
+    pub fn find<'a>(&'a self, key: &str) -> Option<&'a Xml> {
         match self {
             &Xml::Object(ref map) => map.get(key),
-            _ => None
+            _ => None,
         }
     }
 
     /// Attempts to get a nested XML Object for each key in `keys`.
     /// If any key is found not to exist, find_path will return None.
     /// Otherwise, it will return the Xml value associated with the final key.
-    pub fn find_path<'a>(&'a self, keys: &[&str]) -> Option<&'a Xml>{
+    pub fn find_path<'a>(&'a self, keys: &[&str]) -> Option<&'a Xml> {
         let mut target = self;
         for key in keys.iter() {
             match target.find(*key) {
-                Some(t) => { target = t; },
-                None => return None
+                Some(t) => {
+                    target = t;
+                }
+                None => return None,
             }
         }
         Some(target)
@@ -505,14 +532,14 @@ impl Xml {
                         for (_, v) in map.iter() {
                             match v.search(key) {
                                 x if x.is_some() => return x,
-                                _ => ()
+                                _ => (),
                             }
                         }
                         None
                     }
                 }
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
 
@@ -526,7 +553,7 @@ impl Xml {
     pub fn as_object<'a>(&'a self) -> Option<&'a Object> {
         match self {
             &Xml::Object(ref map) => Some(map),
-            _ => None
+            _ => None,
         }
     }
 
@@ -540,7 +567,7 @@ impl Xml {
     pub fn as_array<'a>(&'a self) -> Option<&'a Array> {
         match self {
             &Xml::Array(ref array) => Some(&*array),
-            _ => None
+            _ => None,
         }
     }
 
@@ -554,7 +581,7 @@ impl Xml {
     pub fn as_string<'a>(&'a self) -> Option<&'a str> {
         match *self {
             Xml::String(ref s) => Some(&s),
-            _ => None
+            _ => None,
         }
     }
 
@@ -587,7 +614,7 @@ impl Xml {
     pub fn as_i32(&self) -> Option<i32> {
         match *self {
             Xml::I32(n) => Some(n),
-            _ => None
+            _ => None,
         }
     }
 
@@ -597,7 +624,7 @@ impl Xml {
         match *self {
             Xml::I32(n) => num::cast(n),
             Xml::F64(n) => Some(n),
-            _ => None
+            _ => None,
         }
     }
 
@@ -611,7 +638,7 @@ impl Xml {
     pub fn as_boolean(&self) -> Option<bool> {
         match self {
             &Xml::Boolean(b) => Some(b),
-            _ => None
+            _ => None,
         }
     }
 
@@ -625,12 +652,12 @@ impl Xml {
     pub fn as_null(&self) -> Option<()> {
         match self {
             &Xml::Null => Some(()),
-            _ => None
+            _ => None,
         }
     }
 }
 
-impl<'a> Index<&'a str>  for Xml {
+impl<'a> Index<&'a str> for Xml {
     type Output = Xml;
 
     fn index(&self, idx: &str) -> &Xml {
@@ -644,7 +671,7 @@ impl Index<usize> for Xml {
     fn index<'a>(&'a self, idx: usize) -> &'a Xml {
         match self {
             &Xml::Array(ref v) => v.index(idx),
-            _ => panic!("can only index XML with usize if it is an array")
+            _ => panic!("can only index XML with usize if it is an array"),
         }
     }
 }
@@ -689,7 +716,7 @@ pub enum XmlEvent {
     NullEnd, // <nil/>
     // FIXME: datetime
     // FIXME: Base64
-    Error(ParserError) // FIXME: add error types
+    Error(ParserError), // FIXME: add error types
 }
 
 struct Builder<B: BufRead> {
@@ -698,10 +725,10 @@ struct Builder<B: BufRead> {
 }
 
 fn syntax_error_for_token(token: &Option<XmlEvent>) -> BuilderError {
-  match token.as_ref() {
-    Some(token) => SyntaxError(InvalidSyntax, format!("Unexpected {:?}", token)),
-    None => SyntaxError(InvalidSyntax, "Got None".into()),
-  }
+    match token.as_ref() {
+        Some(token) => SyntaxError(InvalidSyntax, format!("Unexpected {:?}", token)),
+        None => SyntaxError(InvalidSyntax, "Got None".into()),
+    }
 
 }
 
@@ -709,29 +736,36 @@ impl<B: BufRead> Builder<B> {
     /// Create an XML Builder.
     pub fn new(src: B) -> Builder<B> {
         let config = ParserConfig::new().trim_whitespace(true);
-        Builder { parser: EventReader::with_config(src, config), token: None, }
+        Builder {
+            parser: EventReader::with_config(src, config),
+            token: None,
+        }
     }
 
 
     pub fn build(&mut self) -> Result<Vec<Xml>, BuilderError> {
         self.set_self_next_token_state();
         match self.token.take() {
-          Some(XmlEvent::StartDocument) => {},
-          _ => return Err(syntax_error_for_token(&self.token)),
+            Some(XmlEvent::StartDocument) => {}
+            _ => return Err(syntax_error_for_token(&self.token)),
         }
 
         let results = self.build_response();
 
         self.set_self_next_token_state();
         match self.token.take() {
-          Some(XmlEvent::EndDocument) => {},
-          _ => return Err(syntax_error_for_token(&self.token)),
+            Some(XmlEvent::EndDocument) => {}
+            _ => return Err(syntax_error_for_token(&self.token)),
         }
 
         match self.token.take() {
             None => {}
-            Some(XmlEvent::Error(e)) => { return Err(e); }
-            ref tok => { panic!("unexpected token {:?}", tok.clone()); }
+            Some(XmlEvent::Error(e)) => {
+                return Err(e);
+            }
+            ref tok => {
+                panic!("unexpected token {:?}", tok.clone());
+            }
             // FIXME: we will need some way to parse a parameter only, and not error on </param>
             // ?? make separate self.build_param()?
         }
@@ -740,92 +774,86 @@ impl<B: BufRead> Builder<B> {
     }
 
     fn build_response(&mut self) -> Result<Vec<Xml>, BuilderError> {
-      self.set_self_next_token_state();
-      match self.token {
-        Some(XmlEvent::MethodResponseStart) => {},
-          _ => return Err(syntax_error_for_token(&self.token)),
-      }
+        self.set_self_next_token_state();
+        match self.token {
+            Some(XmlEvent::MethodResponseStart) => {}
+            _ => return Err(syntax_error_for_token(&self.token)),
+        }
 
-      let res = self.build_method_response();
-      self.set_self_next_token_state();
-      res
+        let res = self.build_method_response();
+        self.set_self_next_token_state();
+        res
     }
 
     fn build_method_response(&mut self) -> Result<Vec<Xml>, BuilderError> {
-      self.set_self_next_token_state();
-      match self.token {
-        Some(XmlEvent::ParametersListStart) => {},
-          _ => return Err(syntax_error_for_token(&self.token)),
-      }
+        self.set_self_next_token_state();
+        match self.token {
+            Some(XmlEvent::ParametersListStart) => {}
+            _ => return Err(syntax_error_for_token(&self.token)),
+        }
 
-      let res = self.build_params_list();
-      self.set_self_next_token_state();
-      res
+        let res = self.build_params_list();
+        self.set_self_next_token_state();
+        res
     }
 
     fn build_params_list(&mut self) -> Result<Vec<Xml>, BuilderError> {
-      self.set_self_next_token_state();
-      match self.token {
-        Some(XmlEvent::ParameterStart) => {},
-          _ => return Err(syntax_error_for_token(&self.token)),
-      }
-
-      let mut results = Vec::new();
-      self.set_self_next_token_state();
-
-      loop {
+        self.set_self_next_token_state();
         match self.token {
-          Some(XmlEvent::ValueStart) => {
-            self.set_self_next_token_state();
-            match self.build_param() {
-              Ok(xml) => {
-                results.push(xml);
-                self.set_self_next_token_state();
-              },
-              Err(error) => return Err(error)
-            }
-          },
-          Some(XmlEvent::ValueEnd) => {
-            self.set_self_next_token_state();
-            ()
-          },
-          _ => break,
+            Some(XmlEvent::ParameterStart) => {}
+            _ => return Err(syntax_error_for_token(&self.token)),
         }
-      }
 
-      self.set_self_next_token_state();
-      Ok(results)
+        let mut results = Vec::new();
+        self.set_self_next_token_state();
+
+        loop {
+            match self.token {
+                Some(XmlEvent::ValueStart) => {
+                    self.set_self_next_token_state();
+                    match self.build_param() {
+                        Ok(xml) => {
+                            results.push(xml);
+                            self.set_self_next_token_state();
+                        }
+                        Err(error) => return Err(error),
+                    }
+                }
+                Some(XmlEvent::ValueEnd) => {
+                    self.set_self_next_token_state();
+                    ()
+                }
+                _ => break,
+            }
+        }
+
+        self.set_self_next_token_state();
+        Ok(results)
     }
 
     fn build_param(&mut self) -> Result<Xml, BuilderError> {
-      self.build_value()
+        self.build_value()
     }
 
     fn set_self_next_token_state(&mut self) {
         let next = self.parser.next();
         self.token = match next {
-            events::XmlEvent::StartDocument { version: _, encoding: _, standalone: _} => {
+            events::XmlEvent::StartDocument { version: _, encoding: _, standalone: _ } => {
                 Some(XmlEvent::StartDocument)
             }
-            events::XmlEvent::EndDocument => {
-                Some(XmlEvent::EndDocument)
-            }
+            events::XmlEvent::EndDocument => Some(XmlEvent::EndDocument),
             events::XmlEvent::StartElement { name, attributes: _, namespace: _ } => {
                 self.parse_tag_start(&name.local_name)
             }
-            events::XmlEvent::EndElement { name } => {
-                self.parse_tag_end(&name.local_name)
-            }
-            events::XmlEvent::Characters(s) => {
-                self.parse_tag_characters(&s, &self.token)
-            }
+            events::XmlEvent::EndElement { name } => self.parse_tag_end(&name.local_name),
+            events::XmlEvent::Characters(s) => self.parse_tag_characters(&s, &self.token),
 
             _ => None,
         }
     }
 
     pub fn build_value(&mut self) -> Result<Xml, BuilderError> {
-    	let token = self.token.clone();
+        let token = self.token.clone();
         match token {
             // all values must begin with opening tag
             Some(XmlEvent::ObjectStart) => self.build_object(),
@@ -845,7 +873,9 @@ impl<B: BufRead> Builder<B> {
             Some(XmlEvent::StringEnd) => Err(SyntaxError(InvalidSyntax, "Got StringEnd".into())),
             Some(XmlEvent::NameStart) => Err(SyntaxError(InvalidSyntax, "Got NameStart".into())),
             Some(XmlEvent::NameEnd) => Err(SyntaxError(InvalidSyntax, "Got NameEnd".into())),
-            Some(XmlEvent::MemberStart) => Err(SyntaxError(InvalidSyntax, "Got MemberStart".into())),
+            Some(XmlEvent::MemberStart) => {
+                Err(SyntaxError(InvalidSyntax, "Got MemberStart".into()))
+            }
             Some(XmlEvent::MemberEnd) => Err(SyntaxError(InvalidSyntax, "Got MemberEnd".into())),
             Some(XmlEvent::DataStart) => Err(SyntaxError(InvalidSyntax, "Got DataStart".into())),
             Some(XmlEvent::DataEnd) => Err(SyntaxError(InvalidSyntax, "Got DataEnd".into())),
@@ -853,8 +883,12 @@ impl<B: BufRead> Builder<B> {
             Some(XmlEvent::ValueEnd) => Err(SyntaxError(InvalidSyntax, "Got ValueEnd".into())),
             Some(XmlEvent::I32Value(_)) => Err(SyntaxError(InvalidSyntax, "Got I32Value".into())),
             Some(XmlEvent::F64Value(_)) => Err(SyntaxError(InvalidSyntax, "Got F64Value".into())),
-            Some(XmlEvent::BooleanValue(_)) => Err(SyntaxError(InvalidSyntax, "Got BooleanValue".into())),
-            Some(XmlEvent::StringValue(_)) => Err(SyntaxError(InvalidSyntax, "Got StringValue".into())),
+            Some(XmlEvent::BooleanValue(_)) => {
+                Err(SyntaxError(InvalidSyntax, "Got BooleanValue".into()))
+            }
+            Some(XmlEvent::StringValue(_)) => {
+                Err(SyntaxError(InvalidSyntax, "Got StringValue".into()))
+            }
             Some(XmlEvent::NameValue(_)) => Err(SyntaxError(InvalidSyntax, "Got NameValue".into())),
             Some(XmlEvent::Error(e)) => Err(e),
             None => Err(SyntaxError(EOFWhileParsingValue, "Got None".into())),
@@ -875,9 +909,11 @@ impl<B: BufRead> Builder<B> {
             // looking for <member>
             if self.token != Some(XmlEvent::MemberStart) {
                 return match self.token {
-                  Some(_) => Err(syntax_error_for_token(&self.token)),
-                  None => Err(SyntaxError(InvalidSyntax, "Got None (expected MemberStart)".into()))
-                }
+                    Some(_) => Err(syntax_error_for_token(&self.token)),
+                    None => {
+                        Err(SyntaxError(InvalidSyntax, "Got None (expected MemberStart)".into()))
+                    }
+                };
             }
             self.set_self_next_token_state(); // looking for <name>
             if self.token != Some(XmlEvent::NameStart) {
@@ -886,7 +922,9 @@ impl<B: BufRead> Builder<B> {
             self.set_self_next_token_state(); // looking for string value inside name
             let key = match self.token {
                 Some(XmlEvent::NameValue(ref s)) => s.to_string(),
-                _ => { return Err(syntax_error_for_token(&self.token)); }
+                _ => {
+                    return Err(syntax_error_for_token(&self.token));
+                }
             };
             self.set_self_next_token_state(); // looking for </name>
             if self.token != Some(XmlEvent::NameEnd) {
@@ -898,8 +936,12 @@ impl<B: BufRead> Builder<B> {
             }
             self.set_self_next_token_state(); // parse whatever value is inside
             match self.build_value() {
-                Ok(value) => { values.insert(key, value); }
-                Err(e) => { return Err(e); }
+                Ok(value) => {
+                    values.insert(key, value);
+                }
+                Err(e) => {
+                    return Err(e);
+                }
             }
             self.set_self_next_token_state(); // looking for </value>
             if self.token != Some(XmlEvent::ValueEnd) {
@@ -924,7 +966,7 @@ impl<B: BufRead> Builder<B> {
                 self.set_self_next_token_state();
                 match self.build_value() {
                     Ok(v) => values.push(v),
-                    Err(e) => { return Err(e) }
+                    Err(e) => return Err(e),
                 }
                 self.set_self_next_token_state();
                 match self.token {
@@ -1001,20 +1043,20 @@ impl<B: BufRead> Builder<B> {
         match s {
             "0" => Some(XmlEvent::BooleanValue(false)),
             "1" => Some(XmlEvent::BooleanValue(true)),
-            _ => None
+            _ => None,
         }
     }
 
     fn parse_i32_value(&self, s: &str) -> Option<XmlEvent> {
         match s.parse::<i32>() {
             Ok(n) => Some(XmlEvent::I32Value(n)),
-            Err(_) => None//Err(ParserError(e))
+            Err(_) => None,//Err(ParserError(e))
         }
     }
     fn parse_f64_value(&self, s: &str) -> Option<XmlEvent> {
         match s.parse::<f64>() {
             Ok(n) => Some(XmlEvent::F64Value(n)),
-            Err(_) => None//Err(ParserError(e))
+            Err(_) => None,//Err(ParserError(e))
         }
     }
     fn parse_string_value(&self, s: &str) -> Option<XmlEvent> {
@@ -1041,7 +1083,7 @@ impl<B: BufRead> Builder<B> {
             "string" => Some(XmlEvent::StringStart),
             "nil" => Some(XmlEvent::NullStart),
             _ => None,
-        }
+        };
     }
 
     fn parse_tag_end(&self, name: &str) -> Option<XmlEvent> {
@@ -1062,7 +1104,7 @@ impl<B: BufRead> Builder<B> {
             "string" => Some(XmlEvent::StringEnd),
             "nil" => Some(XmlEvent::NullEnd),
             _ => None,
-        }
+        };
     }
 
     fn parse_tag_characters(&self, s: &str, token: &Option<XmlEvent>) -> Option<XmlEvent> {
@@ -1152,23 +1194,24 @@ impl SerializeDecoder for Decoder {
     read_primitive! { read_i64, i64 }
 
     fn read_f32(&mut self) -> DecodeResult<f32> {
-      self.read_f64().map(|x| x as f32)
+        self.read_f64().map(|x| x as f32)
     }
 
     fn read_f64(&mut self) -> DecodeResult<f64> {
         match self.pop() {
             Xml::I32(f) => Ok(f as f64),
             Xml::F64(f) => Ok(f),
-            Xml::String(s) => { // FIXME: does this exist for XML?
+            Xml::String(s) => {
+                // FIXME: does this exist for XML?
                 // re: #12967.. a type w/ numeric keys (ie HashMap<usize, V> etc)
                 // is going to have a string here, as per JSON spec.
                 match s.parse() {
                     Ok(f) => Ok(f),
                     _ => Err(ExpectedError("Number".to_string(), s)),
                 }
-            },
+            }
             Xml::Null => Ok(f64::NAN), // FIXME: does this exist for XML?
-            value => Err(ExpectedError("Number".to_string(), format!("{}", value)))
+            value => Err(ExpectedError("Number".to_string(), format!("{}", value))),
         }
     }
 
@@ -1183,7 +1226,7 @@ impl SerializeDecoder for Decoder {
             match (it.next(), it.next()) {
                 // exactly one character
                 (Some(c), None) => return Ok(c),
-                _ => ()
+                _ => (),
             }
         }
         Err(ExpectedError("single character string".to_string(), format!("{}", s)))
@@ -1194,15 +1237,14 @@ impl SerializeDecoder for Decoder {
         expect!(val, String)
     }
 
-    fn read_enum<T, F>(&mut self, _name: &str, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_enum<T, F>(&mut self, _name: &str, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         f(self)
     }
 
-    fn read_enum_variant<T, F>(&mut self, names: &[&str],
-                               mut f: F) -> DecodeResult<T>
-        where F: FnMut(&mut Decoder, usize) -> DecodeResult<T>,
+    fn read_enum_variant<T, F>(&mut self, names: &[&str], mut f: F) -> DecodeResult<T>
+        where F: FnMut(&mut Decoder, usize) -> DecodeResult<T>
     {
         let name = match self.pop() {
             Xml::String(s) => s,
@@ -1212,73 +1254,61 @@ impl SerializeDecoder for Decoder {
                     Some(val) => {
                         return Err(ExpectedError("String".to_string(), format!("{}", val)))
                     }
-                    None => {
-                        return Err(MissingFieldError("variant".to_string()))
-                    }
+                    None => return Err(MissingFieldError("variant".to_string())),
                 };
                 match o.remove(&"fields".to_string()) {
                     Some(Xml::Array(l)) => {
                         for field in l.into_iter().rev() {
                             self.stack.push(field);
                         }
-                    },
-                    Some(val) => {
-                        return Err(ExpectedError("Array".to_string(), format!("{}", val)))
                     }
-                    None => {
-                        return Err(MissingFieldError("fields".to_string()))
-                    }
+                    Some(val) => return Err(ExpectedError("Array".to_string(), format!("{}", val))),
+                    None => return Err(MissingFieldError("fields".to_string())),
                 }
                 n
             }
-            xml => {
-                return Err(ExpectedError("String or Object".to_string(), format!("{}", xml)))
-            }
+            xml => return Err(ExpectedError("String or Object".to_string(), format!("{}", xml))),
         };
         let idx = match names.iter().position(|n| *n == &name) {
             Some(idx) => idx,
-            None => return Err(UnknownVariantError(name))
+            None => return Err(UnknownVariantError(name)),
         };
         f(self, idx)
     }
 
-    fn read_enum_variant_arg<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_enum_variant_arg<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         f(self)
     }
 
-    fn read_enum_struct_variant<T, F>(&mut self, names: &[&str], f: F) -> DecodeResult<T> where
-        F: FnMut(&mut Decoder, usize) -> DecodeResult<T>,
+    fn read_enum_struct_variant<T, F>(&mut self, names: &[&str], f: F) -> DecodeResult<T>
+        where F: FnMut(&mut Decoder, usize) -> DecodeResult<T>
     {
         self.read_enum_variant(names, f)
     }
 
 
     fn read_enum_struct_variant_field<T, F>(&mut self,
-                                         _name: &str,
-                                         idx: usize,
-                                         f: F)
-                                         -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+                                            _name: &str,
+                                            idx: usize,
+                                            f: F)
+                                            -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         self.read_enum_variant_arg(idx, f)
     }
 
-    fn read_struct<T, F>(&mut self, _name: &str, _len: usize, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_struct<T, F>(&mut self, _name: &str, _len: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         let value = try!(f(self));
         self.pop();
         Ok(value)
     }
 
-    fn read_struct_field<T, F>(&mut self,
-                               name: &str,
-                               _idx: usize,
-                               f: F)
-                               -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_struct_field<T, F>(&mut self, name: &str, _idx: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         let mut obj = try!(expect!(self.pop(), Object));
 
@@ -1291,7 +1321,7 @@ impl SerializeDecoder for Decoder {
                     Ok(x) => x,
                     Err(_) => return Err(MissingFieldError(name.to_string())),
                 }
-            },
+            }
             Some(xml) => {
                 self.stack.push(xml);
                 try!(f(self))
@@ -1301,8 +1331,8 @@ impl SerializeDecoder for Decoder {
         Ok(value)
     }
 
-    fn read_tuple<T, F>(&mut self, tuple_len: usize, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_tuple<T, F>(&mut self, tuple_len: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         self.read_seq(move |d, len| {
             if len == tuple_len {
@@ -1313,43 +1343,39 @@ impl SerializeDecoder for Decoder {
         })
     }
 
-    fn read_tuple_arg<T, F>(&mut self, idx: usize, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_tuple_arg<T, F>(&mut self, idx: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         self.read_seq_elt(idx, f)
     }
 
-    fn read_tuple_struct<T, F>(&mut self,
-                               _name: &str,
-                               len: usize,
-                               f: F)
-                               -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_tuple_struct<T, F>(&mut self, _name: &str, len: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         self.read_tuple(len, f)
     }
 
-    fn read_tuple_struct_arg<T, F>(&mut self,
-                                   idx: usize,
-                                   f: F)
-                                   -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_tuple_struct_arg<T, F>(&mut self, idx: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
 
         self.read_tuple_arg(idx, f)
     }
 
-    fn read_option<T, F>(&mut self, mut f: F) -> DecodeResult<T> where
-        F: FnMut(&mut Decoder, bool) -> DecodeResult<T>,
+    fn read_option<T, F>(&mut self, mut f: F) -> DecodeResult<T>
+        where F: FnMut(&mut Decoder, bool) -> DecodeResult<T>
     {
         match self.pop() {
             Xml::Null => f(self, false),
-            value => { self.stack.push(value); f(self, true) }
+            value => {
+                self.stack.push(value);
+                f(self, true)
+            }
         }
     }
 
-    fn read_seq<T, F>(&mut self, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder, usize) -> DecodeResult<T>,
+    fn read_seq<T, F>(&mut self, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder, usize) -> DecodeResult<T>
     {
         let array = try!(expect!(self.pop(), Array));
         let len = array.len();
@@ -1359,14 +1385,14 @@ impl SerializeDecoder for Decoder {
         f(self, len)
     }
 
-    fn read_seq_elt<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_seq_elt<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         f(self)
     }
 
-    fn read_map<T, F>(&mut self, f: F) -> DecodeResult<T> where
-        F: FnOnce(&mut Decoder, usize) -> DecodeResult<T>,
+    fn read_map<T, F>(&mut self, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder, usize) -> DecodeResult<T>
     {
         let obj = try!(expect!(self.pop(), Object));
         let len = obj.len();
@@ -1377,13 +1403,13 @@ impl SerializeDecoder for Decoder {
         f(self, len)
     }
 
-    fn read_map_elt_key<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T> where
-       F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_map_elt_key<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         f(self)
     }
-    fn read_map_elt_val<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T> where
-       F: FnOnce(&mut Decoder) -> DecodeResult<T>,
+    fn read_map_elt_val<T, F>(&mut self, _idx: usize, f: F) -> DecodeResult<T>
+        where F: FnOnce(&mut Decoder) -> DecodeResult<T>
     {
         f(self)
     }
@@ -1413,41 +1439,53 @@ to_xml_impl_i32! { isize, i8, i16, i32, i64 }
 to_xml_impl_i32! { usize, u8, u16, u32, u64 }
 
 impl ToXml for Xml {
-    fn to_xml(&self) -> Xml { self.clone() }
+    fn to_xml(&self) -> Xml {
+        self.clone()
+    }
 }
 
 impl ToXml for f32 {
-    fn to_xml(&self) -> Xml { (*self as f64).to_xml() }
+    fn to_xml(&self) -> Xml {
+        (*self as f64).to_xml()
+    }
 }
 
 impl ToXml for f64 {
     fn to_xml(&self) -> Xml {
         Xml::F64(*self)
-        /* // FIXME: look up XML-RPC float behavior
-        use std::num::FpCategory::{Nan, Infinite};
-
-        match self.classify() {
-            Nan | Infinite => Xml::Null,
-            _                  => Xml::F64(*self)
-        }
-        */
+        // // FIXME: look up XML-RPC float behavior
+        // use std::num::FpCategory::{Nan, Infinite};
+        //
+        // match self.classify() {
+        // Nan | Infinite => Xml::Null,
+        // _                  => Xml::F64(*self)
+        // }
+        //
     }
 }
 
 impl ToXml for () {
-    fn to_xml(&self) -> Xml { Xml::Null }
+    fn to_xml(&self) -> Xml {
+        Xml::Null
+    }
 }
 
 impl ToXml for bool {
-    fn to_xml(&self) -> Xml { Xml::Boolean(*self) }
+    fn to_xml(&self) -> Xml {
+        Xml::Boolean(*self)
+    }
 }
 
 impl ToXml for str {
-    fn to_xml(&self) -> Xml { Xml::String(self.to_string()) }
+    fn to_xml(&self) -> Xml {
+        Xml::String(self.to_string())
+    }
 }
 
 impl ToXml for String {
-    fn to_xml(&self) -> Xml { Xml::String((*self).clone()) }
+    fn to_xml(&self) -> Xml {
+        Xml::String((*self).clone())
+    }
 }
 
 macro_rules! tuple_impl {
@@ -1483,11 +1521,15 @@ tuple_impl!{A, B, C, D, E, F, G, H, I, J, K}
 tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L}
 
 impl<A: ToXml> ToXml for [A] {
-    fn to_xml(&self) -> Xml { Xml::Array(self.iter().map(|elt| elt.to_xml()).collect()) }
+    fn to_xml(&self) -> Xml {
+        Xml::Array(self.iter().map(|elt| elt.to_xml()).collect())
+    }
 }
 
 impl<A: ToXml> ToXml for Vec<A> {
-    fn to_xml(&self) -> Xml { Xml::Array(self.iter().map(|elt| elt.to_xml()).collect()) }
+    fn to_xml(&self) -> Xml {
+        Xml::Array(self.iter().map(|elt| elt.to_xml()).collect())
+    }
 }
 
 impl<A: ToXml> ToXml for BTreeMap<String, A> {
@@ -1510,11 +1552,11 @@ impl<A: ToXml> ToXml for HashMap<String, A> {
     }
 }
 
-impl<A:ToXml> ToXml for Option<A> {
+impl<A: ToXml> ToXml for Option<A> {
     fn to_xml(&self) -> Xml {
         match *self {
             None => Xml::Null,
-            Some(ref value) => value.to_xml()
+            Some(ref value) => value.to_xml(),
         }
     }
 }
@@ -1547,15 +1589,12 @@ impl<'a, T: Encodable> fmt::Display for AsXml<'a, T> {
     }
 }
 
-/*
-impl FromStr for Xml {
-    fn from_str(s: &str) -> Option<Xml> {
-        Xml::from_str(s).ok()
-    }
-}
-*/
+// impl FromStr for Xml {
+// fn from_str(s: &str) -> Option<Xml> {
+// Xml::from_str(s).ok()
+// }
+// }
+//
 
 #[cfg(test)]
-mod tests {
-
-}
+mod tests {}

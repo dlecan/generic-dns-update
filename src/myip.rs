@@ -27,12 +27,18 @@ pub trait GetMyIpAddr<T> {
 }
 
 impl IpProvider {
-    fn build(&self) -> Box<GetMyIpAddr<IpAddr>>  {
+    fn build(&self) -> Box<GetMyIpAddr<IpAddr>> {
         match self {
             &IpProvider::Stdin => Box::new(StdinIpProvider),
-            &IpProvider::SfrLaBoxFibre => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE))),
-            &IpProvider::OpenDNS => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_OPENDNS))),
-            &IpProvider::Ipify => Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_IPIFY))),
+            &IpProvider::SfrLaBoxFibre => {
+                Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_SFR_LABOX_FIBRE)))
+            }
+            &IpProvider::OpenDNS => {
+                Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_OPENDNS)))
+            }
+            &IpProvider::Ipify => {
+                Box::new(FromRegexIpProvider::new(HttpIpProvider::new(URL_IPIFY)))
+            }
         }
     }
 }
@@ -45,7 +51,7 @@ impl FromStr for IpProvider {
             "-" => Ok(IpProvider::Stdin),
             "sfrlaboxfibre" => Ok(IpProvider::SfrLaBoxFibre),
             "opendns" => Ok(IpProvider::OpenDNS),
-            "ipify"=> Ok(IpProvider::Ipify),
+            "ipify" => Ok(IpProvider::Ipify),
             value => Err(format!("Unknown value for IP provider: {}", value).to_owned()),
         }
     }
@@ -57,7 +63,6 @@ impl GetMyIpAddr<IpAddr> for IpProvider {
     }
 }
 
-//
 // stdin
 //
 
@@ -76,7 +81,6 @@ impl GetMyIpAddr<IpAddr> for StdinIpProvider {
     }
 }
 
-//
 // http
 //
 
@@ -86,9 +90,7 @@ struct HttpIpProvider<'a> {
 
 impl<'a> HttpIpProvider<'a> {
     fn new(url: &'a str) -> HttpIpProvider {
-        HttpIpProvider {
-            url: url,
-        }
+        HttpIpProvider { url: url }
     }
 }
 
@@ -115,9 +117,7 @@ pub struct FromRegexIpProvider<P: GetMyIpAddr<String>> {
 
 impl<'a, P: GetMyIpAddr<String>> FromRegexIpProvider<P> {
     fn new(provider: P) -> FromRegexIpProvider<P> {
-        FromRegexIpProvider {
-            provider: provider,
-        }
+        FromRegexIpProvider { provider: provider }
     }
 }
 

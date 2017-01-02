@@ -6,14 +6,7 @@ use std::num::ParseIntError;
 use hyper::error::Error as HyperError;
 use regex::Error as RegexError;
 
-use self::Error::{
-    Io,
-    AddrParse,
-    XmlRpc,
-    Http,
-    Regex,
-    IpNotFound,
-};
+use self::Error::{Io, AddrParse, XmlRpc, Http, Regex, IpNotFound};
 
 /// Result type often returned from methods
 pub type Result<T> = ::std::result::Result<T, Error>;
@@ -37,8 +30,8 @@ impl fmt::Display for Error {
             Http(ref err) => err.fmt(f),
             Regex(ref err) => err.fmt(f),
             IpNotFound => write!(f, "IP address not found in input stream."),
-//            Another => write!(f, "No matching cities with a \
-//                                             population were found."),
+            //            Another => write!(f, "No matching cities with a \
+            //                                             population were found."),
         }
     }
 }
@@ -52,7 +45,7 @@ impl StdError for Error {
             Http(ref err) => err.description(),
             Regex(ref err) => err.description(),
             IpNotFound => "Ip not found",
-//            Another => "not found",
+            //            Another => "not found",
         }
     }
 }
