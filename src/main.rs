@@ -30,7 +30,6 @@ extern crate xml;
 
 use clap::{Arg, App};
 use config::Config;
-use dns::DNSProvider;
 use dns::DNSProviderFactory;
 use dns::Record;
 use env_logger::LogBuilder;
@@ -142,7 +141,7 @@ fn main_with_errors(config: &Config) -> Result<()> {
 
     info!("My IP address: {:?}", my_ip);
 
-    let mut dns_provider = dns::DNSProviderFactory::build(config);
+    let mut dns_provider = DNSProviderFactory::build(config);
 
     match my_ip {
         std::net::IpAddr::V6(_) if !dns_provider.handle_ipv6_addr() => {
