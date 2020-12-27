@@ -5,7 +5,6 @@ authors = ["Damien Lecan <dev@dlecan.com>"]
 description = "A cross-platform tool to update DNS zonefiles (such as Gandi.net) when you have a dynamic public IP address."
 homepage = "https://github.com/dlecan/generic-dns-update/"
 repository = "https://github.com/dlecan/generic-dns-update/"
-readme = "README.md"
 license = "MIT"
 
 [[bin]]
