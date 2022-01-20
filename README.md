@@ -1,4 +1,14 @@
-# GDU | Generic DNS Update [![Build Status](https://travis-ci.org/dlecan/generic-dns-update.svg?branch=master)](https://travis-ci.org/dlecan/generic-dns-update)
+# GDU | Generic DNS Update
+
+    This project is not maintained anymore.
+    I decided to replace it by combining Terraform and the Gandi Go provider
+
+See:
+- https://medium.com/@matzhouse/dynamic-dns-with-terraform-and-route53-3fafe7c68970
+- https://registry.terraform.io/providers/go-gandi/gandi/latest/docs
+
+# Legacy description
+
 A cross-platform tool to update DNS zonefiles (such as Gandi.net) when you have a dynamic public IP address.
 
 It's a DynDNS or equivalent alternative, available for several OS and configured by command line parameters.
